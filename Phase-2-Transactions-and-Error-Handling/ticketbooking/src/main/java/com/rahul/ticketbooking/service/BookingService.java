@@ -2,6 +2,7 @@ package com.rahul.ticketbooking.service;
 
 import com.rahul.ticketbooking.dto.BookingRequest;
 import com.rahul.ticketbooking.entity.*;
+import com.rahul.ticketbooking.exception.*;
 import com.rahul.ticketbooking.repository.BookingRepository;
 import com.rahul.ticketbooking.repository.SeatRepository;
 import com.rahul.ticketbooking.repository.ShowRepository;
@@ -26,20 +27,22 @@ public class BookingService {
     public Booking createBooking(Long showId, BookingRequest request) {
         try {
             Show show = showRepository.findById(showId)
-                    .orElseThrow(() -> new RuntimeException("Show not found with id: " + showId));
+                    .orElseThrow(() -> new ShowNotFoundException("Show not found with id: " + showId));
 
             List<Seat> seats = seatRepository.findAllById(request.getSeatIds());
 
             if (seats.size() != request.getSeatIds().size()) {
-                throw new RuntimeException("One or more seats do not exist");
+                throw new SeatNotFoundException("One or more seats do not exist");
             }
 
             for (Seat seat : seats) {
                 if (!seat.getShow().getId().equals(showId)) {
-                    throw new RuntimeException("Seat " + seat.getSeatNumber() + " does not belong to this show");
+                    throw new SeatDoesNotBelongToShowException(
+                            "Seat " + seat.getSeatNumber() + " does not belong to this show");
                 }
                 if (seat.getStatus() != SeatStatus.AVAILABLE) {
-                    throw new RuntimeException("Seat " + seat.getSeatNumber() + " is already booked");
+                    throw new SeatAlreadyBookedException(
+                            "Seat " + seat.getSeatNumber() + " is already booked");
                 }
             }
 
@@ -75,7 +78,7 @@ public class BookingService {
 
     public Booking getBookingById(Long id) {
         return bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + id));
+                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + id));
     }
 
     @Transactional
@@ -83,7 +86,7 @@ public class BookingService {
         Booking booking = getBookingById(id);
 
         if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new RuntimeException("Booking " + id + " is already cancelled");
+            throw new BookingAlreadyCancelledException("Booking " + id + " is already cancelled");
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
