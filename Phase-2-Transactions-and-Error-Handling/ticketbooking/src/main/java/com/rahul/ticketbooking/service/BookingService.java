@@ -20,46 +20,57 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final SeatRepository seatRepository;
     private final ShowRepository showRepository;
+    private final AuditService auditService;
 
     @Transactional
     public Booking createBooking(Long showId, BookingRequest request) {
-        Show show = showRepository.findById(showId)
-                .orElseThrow(() -> new RuntimeException("Show not found with id: " + showId));
+        try {
+            Show show = showRepository.findById(showId)
+                    .orElseThrow(() -> new RuntimeException("Show not found with id: " + showId));
 
-        List<Seat> seats = seatRepository.findAllById(request.getSeatIds());
+            List<Seat> seats = seatRepository.findAllById(request.getSeatIds());
 
-        if (seats.size() != request.getSeatIds().size()) {
-            throw new RuntimeException("One or more seats do not exist");
-        }
-
-        for (Seat seat : seats) {
-            if (!seat.getShow().getId().equals(showId)) {
-                throw new RuntimeException("Seat " + seat.getSeatNumber() + " does not belong to this show");
+            if (seats.size() != request.getSeatIds().size()) {
+                throw new RuntimeException("One or more seats do not exist");
             }
-            if (seat.getStatus() != SeatStatus.AVAILABLE) {
-                throw new RuntimeException("Seat " + seat.getSeatNumber() + " is already booked");
+
+            for (Seat seat : seats) {
+                if (!seat.getShow().getId().equals(showId)) {
+                    throw new RuntimeException("Seat " + seat.getSeatNumber() + " does not belong to this show");
+                }
+                if (seat.getStatus() != SeatStatus.AVAILABLE) {
+                    throw new RuntimeException("Seat " + seat.getSeatNumber() + " is already booked");
+                }
             }
+
+            BigDecimal totalAmount = seats.stream()
+                    .map(Seat::getPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            for (Seat seat : seats) {
+                seat.setStatus(SeatStatus.BOOKED);
+            }
+            seatRepository.saveAll(seats);
+
+            Booking booking = new Booking();
+            booking.setShow(show);
+            booking.setCustomerName(request.getCustomerName());
+            booking.setCustomerEmail(request.getCustomerEmail());
+            booking.setTotalAmount(totalAmount);
+            booking.setStatus(BookingStatus.CONFIRMED);
+            booking.setCreatedAt(LocalDateTime.now());
+            booking.setSeats(seats);
+
+            Booking saved = bookingRepository.save(booking);
+
+            auditService.logAttempt(showId, request.getCustomerEmail(), true, null);
+
+            return saved;
+
+        } catch (RuntimeException ex) {
+            auditService.logAttempt(showId, request.getCustomerEmail(), false, ex.getMessage());
+            throw ex;
         }
-
-        BigDecimal totalAmount = seats.stream()
-                .map(Seat::getPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        for (Seat seat : seats) {
-            seat.setStatus(SeatStatus.BOOKED);
-        }
-        seatRepository.saveAll(seats);
-
-        Booking booking = new Booking();
-        booking.setShow(show);
-        booking.setCustomerName(request.getCustomerName());
-        booking.setCustomerEmail(request.getCustomerEmail());
-        booking.setTotalAmount(totalAmount);
-        booking.setStatus(BookingStatus.CONFIRMED);
-        booking.setCreatedAt(LocalDateTime.now());
-        booking.setSeats(seats);
-
-        return bookingRepository.save(booking);
     }
 
     public Booking getBookingById(Long id) {
