@@ -1,31 +1,39 @@
 package com.rahul.ticketbooking.controller;
 
 import com.rahul.ticketbooking.dto.BookingRequest;
+import com.rahul.ticketbooking.dto.BookingResponse;
 import com.rahul.ticketbooking.entity.Booking;
+import com.rahul.ticketbooking.mapper.BookingMapper;
 import com.rahul.ticketbooking.service.BookingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/api/bookings")
 @RequiredArgsConstructor
 public class BookingController {
 
     private final BookingService bookingService;
 
-    @PostMapping("/shows/{showId}/bookings")
-    @ResponseStatus(HttpStatus.CREATED)
-    public Booking createBooking(@PathVariable Long showId, @RequestBody BookingRequest request) {
-        return bookingService.createBooking(showId, request);
+    @PostMapping("/{showId}")
+    public ResponseEntity<BookingResponse> createBooking(@PathVariable Long showId,
+                                                         @Valid @RequestBody BookingRequest request) {
+        Booking booking = bookingService.createBooking(showId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(BookingMapper.toResponse(booking));
     }
 
-    @GetMapping("/bookings/{id}")
-    public Booking getBooking(@PathVariable Long id) {
-        return bookingService.getBookingById(id);
+    @GetMapping("/{id}")
+    public ResponseEntity<BookingResponse> getBooking(@PathVariable Long id) {
+        Booking booking = bookingService.getBookingById(id);
+        return ResponseEntity.ok(BookingMapper.toResponse(booking));
     }
 
-    @PatchMapping("/bookings/{id}/cancel")
-    public Booking cancelBooking(@PathVariable Long id) {
-        return bookingService.cancelBooking(id);
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<BookingResponse> cancelBooking(@PathVariable Long id) {
+        Booking booking = bookingService.cancelBooking(id);
+        return ResponseEntity.ok(BookingMapper.toResponse(booking));
     }
 }
