@@ -7,6 +7,7 @@ import com.rahul.ticketbooking.repository.SeatRepository;
 import com.rahul.ticketbooking.repository.ShowRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ public class BookingService {
     private final SeatRepository seatRepository;
     private final ShowRepository showRepository;
 
+    @Transactional
     public Booking createBooking(Long showId, BookingRequest request) {
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new RuntimeException("Show not found with id: " + showId));
@@ -65,7 +67,7 @@ public class BookingService {
                 .orElseThrow(() -> new RuntimeException("Booking not found with id: " + id));
     }
 
-
+    @Transactional
     public Booking cancelBooking(Long id) {
         Booking booking = getBookingById(id);
 
