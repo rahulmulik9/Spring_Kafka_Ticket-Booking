@@ -1,0 +1,126 @@
+{
+  "info": {
+    "name": "Ticket Booking - Phase 1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "movieId", "value": "1" },
+    { "key": "showId", "value": "1" },
+    { "key": "seatId1", "value": "1" },
+    { "key": "seatId2", "value": "2" },
+    { "key": "bookingId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Movies",
+      "item": [
+        {
+          "name": "Create Movie",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/movies",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Interstellar\",\n  \"description\": \"A team travels through a wormhole to save humanity.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List All Movies",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/movies"
+          }
+        },
+        {
+          "name": "Get Movie By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/movies/{{movieId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shows",
+      "item": [
+        {
+          "name": "Create Show",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/movies/{{movieId}}/shows",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"showTime\": \"2026-09-26T18:00:00\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Shows For Movie",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/movies/{{movieId}}/shows"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seats",
+      "item": [
+        {
+          "name": "List Seats For Show",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/shows/{{showId}}/seats"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/shows/{{showId}}/bookings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatIds\": [{{seatId1}}, {{seatId2}}],\n  \"customerName\": \"Rahul\",\n  \"customerEmail\": \"rahul@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Booking By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/bookings/{{bookingId}}"
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/bookings/{{bookingId}}/cancel"
+          }
+        },
+        {
+          "name": "Book Already-Booked Seat (failure check)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/shows/{{showId}}/bookings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatIds\": [{{seatId1}}],\n  \"customerName\": \"Priya\",\n  \"customerEmail\": \"priya@example.com\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
