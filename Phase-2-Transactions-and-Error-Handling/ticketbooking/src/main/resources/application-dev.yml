@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/ticketdb
-    username: postgres
-    password: postgres
+    username: ticketuser
+    password: ticketpass
     driver-class-name: org.postgresql.Driver
   jpa:
     show-sql: true
