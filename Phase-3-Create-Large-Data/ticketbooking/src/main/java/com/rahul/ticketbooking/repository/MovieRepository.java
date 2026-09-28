@@ -5,7 +5,8 @@ import com.rahul.ticketbooking.entity.Movie;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface MovieRepository extends JpaRepository<Movie, Long> {
@@ -19,8 +20,14 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     @Query("select m from Movie m")
     List<Movie> findAllWithShowsGraph();
 
-    // Only id and name are selected. No entities, no description, no createdAt.
+    // Only id and name are selected. No entity, no description, no createdAt.
     @Query("select new com.rahul.ticketbooking.dto.MovieSummaryResponse(m.id, m.name) " +
             "from Movie m order by m.id")
     List<MovieSummaryResponse> findAllSummaries();
+
+    // returns ONE page. Sort, limit and offset come from the Pageable.
+    @Query(value = "select new com.rahul.ticketbooking.dto.MovieSummaryResponse(m.id, m.name) " +
+            "from Movie m",
+            countQuery = "select count(m) from Movie m")
+    Page<MovieSummaryResponse> findSummaryPage(Pageable pageable);
 }
