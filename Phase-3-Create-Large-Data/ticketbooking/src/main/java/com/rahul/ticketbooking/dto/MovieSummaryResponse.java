@@ -5,9 +5,8 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class MovieShowCountResponse {
+public class MovieSummaryResponse {
 
     private Long id;
     private String name;
-    private long showCount;
 }

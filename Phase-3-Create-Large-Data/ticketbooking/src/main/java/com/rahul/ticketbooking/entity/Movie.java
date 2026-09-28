@@ -31,6 +31,7 @@ public class Movie {
     //but the DB session is already closed by that point, so the fetch itself fails. That's the actual exception.
     //@JsonIgnore just tells Jackson: "Don't call getShows() at all when converting this to JSON. Skip it.
 
+
     @OneToMany(mappedBy = "movie", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Show> shows = new ArrayList<>();
