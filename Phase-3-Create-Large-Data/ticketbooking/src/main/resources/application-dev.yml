@@ -4,6 +4,9 @@ spring:
     username: ticketuser
     password: ticketpass
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 3000
   jpa:
     show-sql: false
     properties:
