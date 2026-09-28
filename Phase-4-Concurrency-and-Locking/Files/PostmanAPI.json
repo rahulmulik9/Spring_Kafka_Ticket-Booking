@@ -1,0 +1,256 @@
+{
+  "info": {
+    "name": "Ticket Booking System",
+    "description": "Phase 1 (CRUD) + Phase 2 (Transactions, Errors, Validation) endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "movieId", "value": "1" },
+    { "key": "showId", "value": "1" },
+    { "key": "seatId", "value": "1" },
+    { "key": "bookingId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "Health check message",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/public", "host": ["{{baseUrl}}"], "path": ["public"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Movies",
+      "item": [
+        {
+          "name": "Create movie",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/movies", "host": ["{{baseUrl}}"], "path": ["movies"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Interstellar\",\n  \"description\": \"A team of explorers travel through a wormhole in space.\",\n  \"durationMinutes\": 169\n}"
+            }
+          }
+        },
+        {
+          "name": "Get all movies",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/movies", "host": ["{{baseUrl}}"], "path": ["movies"] }
+          }
+        },
+        {
+          "name": "Get movie by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/movies/{{movieId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["movies", "{{movieId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shows",
+      "item": [
+        {
+          "name": "Create show for movie",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/movies/{{movieId}}/shows",
+              "host": ["{{baseUrl}}"],
+              "path": ["movies", "{{movieId}}", "shows"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"showTime\": \"2026-10-01T18:00:00\",\n  \"screenName\": \"Screen 1\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get shows by movie",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/movies/{{movieId}}/shows",
+              "host": ["{{baseUrl}}"],
+              "path": ["movies", "{{movieId}}", "shows"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seats",
+      "item": [
+        {
+          "name": "Get seats by show",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/shows/{{showId}}/seats",
+              "host": ["{{baseUrl}}"],
+              "path": ["shows", "{{showId}}", "seats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create booking - success",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{showId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{showId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatIds\": [{{seatId}}],\n  \"customerName\": \"Riya Sharma\",\n  \"customerEmail\": \"riya@test.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get booking by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel booking",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Error - Show not found (404)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/9999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "9999"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatIds\": [{{seatId}}],\n  \"customerName\": \"Riya Sharma\",\n  \"customerEmail\": \"riya@test.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Error - Seat already booked (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{showId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{showId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatIds\": [{{seatId}}],\n  \"customerName\": \"Duplicate Attempt\",\n  \"customerEmail\": \"dup@test.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Error - Booking not found (404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "99999"]
+            }
+          }
+        },
+        {
+          "name": "Error - Already cancelled (409)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Validation - Empty seatIds (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{showId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{showId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatIds\": [],\n  \"customerName\": \"Riya Sharma\",\n  \"customerEmail\": \"riya@test.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Validation - Blank customer name (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{showId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{showId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatIds\": [{{seatId}}],\n  \"customerName\": \"\",\n  \"customerEmail\": \"riya@test.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Validation - Invalid email (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{showId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{showId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatIds\": [{{seatId}}],\n  \"customerName\": \"Riya Sharma\",\n  \"customerEmail\": \"not-an-email\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
