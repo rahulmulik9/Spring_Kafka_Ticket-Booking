@@ -1,5 +1,6 @@
 package com.rahul.ticketbooking.controller;
 
+import com.rahul.ticketbooking.dto.MovieShowCountResponse;
 import com.rahul.ticketbooking.entity.Movie;
 import com.rahul.ticketbooking.service.MovieService;
 import lombok.RequiredArgsConstructor;
@@ -29,5 +30,11 @@ public class MovieController {
     @GetMapping("/{id}")
     public Movie getMovieById(@PathVariable Long id) {
         return movieService.getMovieById(id);
+    }
+
+    // TEMPORARY: used to reproduce N+1 in Phase 3
+    @GetMapping("/with-show-count")
+    public List<MovieShowCountResponse> getMoviesWithShowCount(@RequestParam(required = false) Integer limit) {
+        return movieService.getMoviesWithShowCount(limit);
     }
 }
