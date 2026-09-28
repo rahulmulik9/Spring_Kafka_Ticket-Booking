@@ -29,4 +29,8 @@ public class Seat {
     private SeatStatus status;
 
     private BigDecimal price;
+
+    @Version
+    @JsonIgnore
+    private Long version;
 }

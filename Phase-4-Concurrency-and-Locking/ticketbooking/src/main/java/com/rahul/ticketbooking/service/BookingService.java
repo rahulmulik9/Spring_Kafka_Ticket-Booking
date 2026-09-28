@@ -64,11 +64,8 @@ public class BookingService {
             booking.setCreatedAt(LocalDateTime.now());
             booking.setSeats(seats);
 
-            Booking saved = bookingRepository.save(booking);
-
-            auditService.logAttempt(showId, request.getCustomerEmail(), true, null);
-
-            return saved;
+            // The success audit moved to BookingFacade, so it is written only after the commit works.
+            return bookingRepository.save(booking);
 
         } catch (RuntimeException ex) {
             auditService.logAttempt(showId, request.getCustomerEmail(), false, ex.getMessage());

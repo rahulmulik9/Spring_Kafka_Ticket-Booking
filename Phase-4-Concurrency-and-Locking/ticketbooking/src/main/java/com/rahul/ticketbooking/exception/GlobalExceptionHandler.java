@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -58,5 +59,12 @@ public class GlobalExceptionHandler {
     private String errorCode(RuntimeException ex) {
         String name = ex.getClass().getSimpleName().replace("Exception", "");
         return name.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(ObjectOptimisticLockingFailureException ex, HttpServletRequest request) {
+        log.warn("Optimistic lock failure at {}", request.getRequestURI());
+        return buildResponse(HttpStatus.CONFLICT, "SEAT_CONFLICT",
+                "The seat was just taken by another user. Please try again.", request);
     }
 }

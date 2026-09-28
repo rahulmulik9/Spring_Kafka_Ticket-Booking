@@ -4,6 +4,7 @@ import com.rahul.ticketbooking.dto.BookingRequest;
 import com.rahul.ticketbooking.dto.BookingResponse;
 import com.rahul.ticketbooking.entity.Booking;
 import com.rahul.ticketbooking.mapper.BookingMapper;
+import com.rahul.ticketbooking.service.BookingFacade;
 import com.rahul.ticketbooking.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +18,12 @@ import org.springframework.web.bind.annotation.*;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final BookingFacade bookingFacade;
 
     @PostMapping("/{showId}")
     public ResponseEntity<BookingResponse> createBooking(@PathVariable Long showId,
                                                          @Valid @RequestBody BookingRequest request) {
-        Booking booking = bookingService.createBooking(showId, request);
+        Booking booking = bookingFacade.createBooking(showId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(BookingMapper.toResponse(booking));
     }
 
