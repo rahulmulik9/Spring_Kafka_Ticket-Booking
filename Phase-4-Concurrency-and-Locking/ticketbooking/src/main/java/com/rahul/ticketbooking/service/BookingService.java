@@ -21,56 +21,51 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final SeatRepository seatRepository;
     private final ShowRepository showRepository;
-    private final AuditService auditService;
 
+    // Step 6: no try/catch and no AuditService here. Keep the transaction short and
+    // use only ONE connection. Auditing happens in BookingFacade after this method ends.
     @Transactional
     public Booking createBooking(Long showId, BookingRequest request) {
-        try {
-            Show show = showRepository.findById(showId)
-                    .orElseThrow(() -> new ShowNotFoundException("Show not found with id: " + showId));
+        Show show = showRepository.findById(showId)
+                .orElseThrow(() -> new ShowNotFoundException("Show not found with id: " + showId));
 
-         //   List<Seat> seats = seatRepository.findAllById(request.getSeatIds());
-            List<Seat> seats = seatRepository.findAllByIdForUpdate(request.getSeatIds());
-            if (seats.size() != request.getSeatIds().size()) {
-                throw new SeatNotFoundException("One or more seats do not exist");
-            }
+        // Step 5: lock the seat rows. Others wait here until this transaction commits.
+        List<Seat> seats = seatRepository.findAllByIdForUpdate(request.getSeatIds());
 
-            for (Seat seat : seats) {
-                if (!seat.getShow().getId().equals(showId)) {
-                    throw new SeatDoesNotBelongToShowException(
-                            "Seat " + seat.getSeatNumber() + " does not belong to this show");
-                }
-                if (seat.getStatus() != SeatStatus.AVAILABLE) {
-                    throw new SeatAlreadyBookedException(
-                            "Seat " + seat.getSeatNumber() + " is already booked");
-                }
-            }
-
-            BigDecimal totalAmount = seats.stream()
-                    .map(Seat::getPrice)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            for (Seat seat : seats) {
-                seat.setStatus(SeatStatus.BOOKED);
-            }
-            seatRepository.saveAll(seats);
-
-            Booking booking = new Booking();
-            booking.setShow(show);
-            booking.setCustomerName(request.getCustomerName());
-            booking.setCustomerEmail(request.getCustomerEmail());
-            booking.setTotalAmount(totalAmount);
-            booking.setStatus(BookingStatus.CONFIRMED);
-            booking.setCreatedAt(LocalDateTime.now());
-            booking.setSeats(seats);
-
-            // The success audit moved to BookingFacade, so it is written only after the commit works.
-            return bookingRepository.save(booking);
-
-        } catch (RuntimeException ex) {
-            auditService.logAttempt(showId, request.getCustomerEmail(), false, ex.getMessage());
-            throw ex;
+        if (seats.size() != request.getSeatIds().size()) {
+            throw new SeatNotFoundException("One or more seats do not exist");
         }
+
+        for (Seat seat : seats) {
+            if (!seat.getShow().getId().equals(showId)) {
+                throw new SeatDoesNotBelongToShowException(
+                        "Seat " + seat.getSeatNumber() + " does not belong to this show");
+            }
+            if (seat.getStatus() != SeatStatus.AVAILABLE) {
+                throw new SeatAlreadyBookedException(
+                        "Seat " + seat.getSeatNumber() + " is already booked");
+            }
+        }
+
+        BigDecimal totalAmount = seats.stream()
+                .map(Seat::getPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        for (Seat seat : seats) {
+            seat.setStatus(SeatStatus.BOOKED);
+        }
+        seatRepository.saveAll(seats);
+
+        Booking booking = new Booking();
+        booking.setShow(show);
+        booking.setCustomerName(request.getCustomerName());
+        booking.setCustomerEmail(request.getCustomerEmail());
+        booking.setTotalAmount(totalAmount);
+        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setCreatedAt(LocalDateTime.now());
+        booking.setSeats(seats);
+
+        return bookingRepository.save(booking);
     }
 
     public Booking getBookingById(Long id) {

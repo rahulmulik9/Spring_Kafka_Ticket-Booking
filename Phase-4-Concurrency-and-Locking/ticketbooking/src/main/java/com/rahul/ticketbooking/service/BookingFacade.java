@@ -7,6 +7,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
+/*
+ * Step 4: Handle the conflict.
+ *  - Retry the whole transaction when an optimistic lock fails (separate bean, so each
+ *    attempt gets a fresh transaction through the Spring proxy).
+ *  - Retry ONLY the lock exception. Never retry business errors.
+ *
+ * Step 6: Audit outside the transaction.
+ *  - Success AND failure audits are written here, after BookingService's transaction has ended.
+ *  - Before, the failure audit ran inside the transaction (REQUIRES_NEW), which needed a 2nd
+ *    connection while the 1st connection and the seat lock were still held. With a small pool
+ *    that starves the pool.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -31,6 +43,10 @@ public class BookingFacade {
                     auditService.logAttempt(showId, request.getCustomerEmail(), false, "Seat conflict");
                     throw ex;
                 }
+            } catch (RuntimeException ex) {
+                // Business errors, lock timeouts, deadlocks: audit once, then let the handler answer.
+                auditService.logAttempt(showId, request.getCustomerEmail(), false, ex.getMessage());
+                throw ex;
             }
         }
         throw new IllegalStateException("Unreachable");

@@ -3,6 +3,7 @@ package com.rahul.ticketbooking.exception;
 import com.rahul.ticketbooking.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -66,5 +67,14 @@ public class GlobalExceptionHandler {
         log.warn("Optimistic lock failure at {}", request.getRequestURI());
         return buildResponse(HttpStatus.CONFLICT, "SEAT_CONFLICT",
                 "The seat was just taken by another user. Please try again.", request);
+    }
+
+    // Step 6: a request waited too long for a seat lock (lock_timeout), or Postgres killed it
+    // because of a deadlock. Both are temporary, so 503 with a clear message, not a raw 500.
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handlePessimisticLock(PessimisticLockingFailureException ex, HttpServletRequest request) {
+        log.warn("Lock failure at {}: {}", request.getRequestURI(), ex.getClass().getSimpleName());
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "SEAT_LOCK_TIMEOUT",
+                "The seat is busy right now. Please try again in a few seconds.", request);
     }
 }
