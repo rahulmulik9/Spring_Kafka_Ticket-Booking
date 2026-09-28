@@ -906,3 +906,23 @@ Tick a box when the step works and is committed. Update "Current position" at th
 - [ ] Step 7: CI pipeline
 - [ ] Step 8: Kubernetes basics
 - [ ] Step 9: Final README and tag `phase-11-delivery`
+
+
+## 10. Phase summary (last step of every phase)
+
+The last step of each phase (the "comparison and tag" step) must also produce a phase summary
+for `NOTES.md`, in this order:
+
+1. **Summary table:** one row per problem, with columns Problem, Before, After, Fix (step number).
+2. **Per-step notes:** one short section per step with:
+  - the problem and the proof (numbers, plan, log line)
+  - the fix and why it was picked
+  - the alternative rejected and why
+  - traps, warnings, or rules to remember
+3. **Lessons:** 4 to 6 one-line takeaways.
+4. **Mistakes I made:** real errors hit during the phase.
+5. **Left for later:** what this phase deliberately did not solve, and which phase will.
+6. **Interview answers:** 4 to 6 likely questions, each with a two-line answer.
+
+Use the learner's real numbers, not made-up ones. Wrap the summary in four backticks so the
+inner code formatting survives copying.
