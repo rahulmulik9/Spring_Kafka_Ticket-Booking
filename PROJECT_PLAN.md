@@ -798,26 +798,26 @@ Tick a box when the step works and is committed. Update "Current position" at th
 - [x] Step 9: Basic tests and tag `phase-1-basic`
 
 ## Phase 2: Transactions and Error Handling
-- [ ] Step 1: Reproduce the half-saved bug
-- [ ] Step 2: Add transactions
-- [ ] Step 3: Self-invocation pitfall
-- [ ] Step 4: Rollback rules and propagation
-- [ ] Step 5: Custom exceptions
-- [ ] Step 6: Global error handling
-- [ ] Step 7: DTOs and validation
-- [ ] Step 8: Profiles and configuration
-- [ ] Step 9: Transaction tests and tag `phase-2-transactions`
+- [x] Step 1: Reproduce the half-saved bug
+- [x] Step 2: Add transactions
+- [x] Step 3: Self-invocation pitfall
+- [x] Step 4: Rollback rules and propagation
+- [x] Step 5: Custom exceptions
+- [x] Step 6: Global error handling
+- [x] Step 7: DTOs and validation
+- [x] Step 8: Profiles and configuration
+- [x] Step 9: Transaction tests and tag `phase-2-transactions`
 
 ## Phase 3: Database Performance
-- [ ] Step 1: Create large data
-- [ ] Step 2: Reproduce the N+1 problem
-- [ ] Step 3: Record baseline numbers
-- [ ] Step 4: Fix N+1
-- [ ] Step 5: Lighter read-only results
-- [ ] Step 6: Pagination and sorting
-- [ ] Step 7: Indexes
-- [ ] Step 8: Connection pool tuning
-- [ ] Step 9: Comparison and tag `phase-3-performance`
+- [x] Step 1: Create large data
+- [x] Step 2: Reproduce the N+1 problem
+- [x] Step 3: Record baseline numbers
+- [x] Step 4: Fix N+1
+- [x] Step 5: Lighter read-only results
+- [x] Step 6: Pagination and sorting
+- [x] Step 7: Indexes
+- [x] Step 8: Connection pool tuning
+- [x] Step 9: Comparison and tag `phase-3-performance`
 
 ## Phase 4: Concurrency and Locking
 - [ ] Step 1: Multithreaded test
