@@ -1,0 +1,10 @@
+Get-Content db-scripts/seed-large-data.sql -Raw | docker compose -f Docker-compose.yml exec -T postgres psql -U ticketuser -d ticketdb
+
+
+
+
+
+
+
+Verify yhr count
+docker compose -f Docker-compose.yml exec postgres psql -U ticketuser -d ticketdb -c "SELECT (SELECT count(*) FROM movies) AS movies, (SELECT count(*) FROM shows) AS shows, (SELECT count(*) FROM seats) AS seats;"
