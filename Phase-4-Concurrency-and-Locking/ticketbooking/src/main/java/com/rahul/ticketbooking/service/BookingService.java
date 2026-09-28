@@ -29,8 +29,8 @@ public class BookingService {
             Show show = showRepository.findById(showId)
                     .orElseThrow(() -> new ShowNotFoundException("Show not found with id: " + showId));
 
-            List<Seat> seats = seatRepository.findAllById(request.getSeatIds());
-
+         //   List<Seat> seats = seatRepository.findAllById(request.getSeatIds());
+            List<Seat> seats = seatRepository.findAllByIdForUpdate(request.getSeatIds());
             if (seats.size() != request.getSeatIds().size()) {
                 throw new SeatNotFoundException("One or more seats do not exist");
             }
