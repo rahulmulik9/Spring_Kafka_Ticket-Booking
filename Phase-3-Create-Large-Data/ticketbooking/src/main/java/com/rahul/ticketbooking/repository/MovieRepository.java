@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface MovieRepository extends JpaRepository<Movie, Long> {
@@ -30,4 +31,11 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
             "from Movie m",
             countQuery = "select count(m) from Movie m")
     Page<MovieSummaryResponse> findSummaryPage(Pageable pageable);
+
+    // Exact name match, one page at a time. Uses the index on movies.name after V-next.
+    @Query(value = "select new com.rahul.ticketbooking.dto.MovieSummaryResponse(m.id, m.name) " +
+            "from Movie m where m.name = :name",
+            countQuery = "select count(m) from Movie m where m.name = :name")
+    Page<MovieSummaryResponse> searchByName(@Param("name") String name, Pageable pageable);
+
 }

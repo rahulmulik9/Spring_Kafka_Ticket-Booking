@@ -72,4 +72,10 @@ public class MovieService {
         return movieRepository.findSummaryPage(pageable);
     }
 
+
+    @Transactional(readOnly = true)
+    public Page<MovieSummaryResponse> searchMoviesByName(String name, Pageable pageable) {
+        return movieRepository.searchByName(name, pageable);
+    }
+
 }

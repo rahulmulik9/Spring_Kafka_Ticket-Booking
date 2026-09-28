@@ -53,4 +53,9 @@ public class MovieController {
         return movieService.getMovieSummaryPage(pageable);
     }
 
+    @GetMapping("/search")
+    public Page<MovieSummaryResponse> searchMovies(@RequestParam String name, @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        return movieService.searchMoviesByName(name, pageable);
+    }
+
 }
