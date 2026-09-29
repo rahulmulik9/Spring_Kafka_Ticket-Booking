@@ -820,14 +820,14 @@ Tick a box when the step works and is committed. Update "Current position" at th
 - [x] Step 9: Comparison and tag `phase-3-performance`
 
 ## Phase 4: Concurrency and Locking
-- [ ] Step 1: Multithreaded test
-- [ ] Step 2: Observe the failure
-- [ ] Step 3: Optimistic locking
-- [ ] Step 4: Handle the conflict
-- [ ] Step 5: Pessimistic locking
-- [ ] Step 6: Timeouts and deadlocks
-- [ ] Step 7: Compare both
-- [ ] Step 8: Document and tag `phase-4-locking`
+- [x] Step 1: Multithreaded test
+- [x] Step 2: Observe the failure
+- [x] Step 3: Optimistic locking
+- [x] Step 4: Handle the conflict
+- [x] Step 5: Pessimistic locking
+- [x] Step 6: Timeouts and deadlocks
+- [x] Step 7: Compare both
+- [x] Step 8: Document and tag `phase-4-locking`
 
 ## Phase 5: Security (JWT and Roles)
 - [ ] Step 1: Users, roles, and passwords
