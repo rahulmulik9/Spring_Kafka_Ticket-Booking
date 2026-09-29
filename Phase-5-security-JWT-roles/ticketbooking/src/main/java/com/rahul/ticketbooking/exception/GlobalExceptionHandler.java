@@ -78,4 +78,10 @@ public class GlobalExceptionHandler {
                 "The seat is busy right now. Please try again in a few seconds.", request);
     }
 
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, errorCode(ex), ex.getMessage(), request);
+    }
+
 }
