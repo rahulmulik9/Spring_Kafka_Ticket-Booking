@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class BookingService {
@@ -22,14 +21,11 @@ public class BookingService {
     private final SeatRepository seatRepository;
     private final ShowRepository showRepository;
 
-    // Step 6: no try/catch and no AuditService here. Keep the transaction short and
-    // use only ONE connection. Auditing happens in BookingFacade after this method ends.
     @Transactional
     public Booking createBooking(Long showId, BookingRequest request) {
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new ShowNotFoundException("Show not found with id: " + showId));
 
-        // Step 5: lock the seat rows. Others wait here until this transaction commits.
         List<Seat> seats = seatRepository.findAllByIdForUpdate(request.getSeatIds());
 
         if (seats.size() != request.getSeatIds().size()) {

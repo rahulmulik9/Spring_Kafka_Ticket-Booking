@@ -29,7 +29,6 @@ public class BookingFacade {
     private final BookingService bookingService;
     private final AuditService auditService;
 
-    // No @Transactional here. Each attempt must start its own new transaction.
     public Booking createBooking(Long showId, BookingRequest request) {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
@@ -44,7 +43,6 @@ public class BookingFacade {
                     throw ex;
                 }
             } catch (RuntimeException ex) {
-                // Business errors, lock timeouts, deadlocks: audit once, then let the handler answer.
                 auditService.logAttempt(showId, request.getCustomerEmail(), false, ex.getMessage());
                 throw ex;
             }
