@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
+import java.util.function.BiFunction;
+
 /*
  * Step 4: Handle the conflict.
  *  - Retry the whole transaction when an optimistic lock fails (separate bean, so each
@@ -30,9 +32,18 @@ public class BookingFacade {
     private final AuditService auditService;
 
     public Booking createBooking(Long showId, BookingRequest request) {
+        return attempt(showId, request, bookingService::createBooking);
+    }
+
+    public Booking createBookingOptimistic(Long showId, BookingRequest request) {
+        return attempt(showId, request, bookingService::createBookingOptimistic);
+    }
+
+    private Booking attempt(Long showId, BookingRequest request,
+                            BiFunction<Long, BookingRequest, Booking> bookingCall) {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
-                Booking booking = bookingService.createBooking(showId, request);
+                Booking booking = bookingCall.apply(showId, request);
                 auditService.logAttempt(showId, request.getCustomerEmail(), true, null);
                 return booking;
             } catch (ObjectOptimisticLockingFailureException ex) {

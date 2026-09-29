@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.function.Function;
+
 @Service
 @RequiredArgsConstructor
 public class BookingService {
@@ -21,12 +23,24 @@ public class BookingService {
     private final SeatRepository seatRepository;
     private final ShowRepository showRepository;
 
+    // Step 5: pessimistic. SELECT ... FOR UPDATE, others wait for the row lock.
     @Transactional
     public Booking createBooking(Long showId, BookingRequest request) {
+        return book(showId, request, seatRepository::findAllByIdForUpdate);
+    }
+
+    // Step 7: optimistic, for comparison only. Relies on @Version, no row lock taken on read.
+    @Transactional
+    public Booking createBookingOptimistic(Long showId, BookingRequest request) {
+        return book(showId, request, seatRepository::findAllById);
+    }
+
+    // Step 7: shared logic. Only how seats are fetched differs between the two callers above.
+    private Booking book(Long showId, BookingRequest request, Function<List<Long>, List<Seat>> seatFetcher) {
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new ShowNotFoundException("Show not found with id: " + showId));
 
-        List<Seat> seats = seatRepository.findAllByIdForUpdate(request.getSeatIds());
+        List<Seat> seats = seatFetcher.apply(request.getSeatIds());
 
         if (seats.size() != request.getSeatIds().size()) {
             throw new SeatNotFoundException("One or more seats do not exist");
