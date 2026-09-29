@@ -25,3 +25,7 @@ logging:
 
 server:
   port: 8080
+
+jwt:
+  secret: dev-only-secret-key-change-in-prod-min-32-chars
+  expiration-minutes: 30
