@@ -23,8 +23,8 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, errorCode(ex), ex.getMessage(), request);
     }
 
-    @ExceptionHandler({SeatAlreadyBookedException.class, BookingAlreadyCancelledException.class,
-            SeatDoesNotBelongToShowException.class})
+
+    @ExceptionHandler({SeatAlreadyBookedException.class, BookingAlreadyCancelledException.class, SeatDoesNotBelongToShowException.class, EmailAlreadyExistsException.class})
     public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, errorCode(ex), ex.getMessage(), request);
     }
@@ -77,4 +77,5 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "SEAT_LOCK_TIMEOUT",
                 "The seat is busy right now. Please try again in a few seconds.", request);
     }
+
 }
