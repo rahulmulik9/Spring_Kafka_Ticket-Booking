@@ -57,8 +57,7 @@ public class SeatHoldService {
 
             // SET key value NX EX ttl: "set only if it does not exist, and expire it".
             // It is ONE atomic command, so two users can never both succeed.
-            Boolean taken = redisTemplate.opsForValue()
-                    .setIfAbsent(key, owner, Duration.ofSeconds(holdTtlSeconds));
+            Boolean taken = redisTemplate.opsForValue().setIfAbsent(key, owner, Duration.ofSeconds(holdTtlSeconds));
 
             if (Boolean.TRUE.equals(taken)) {
                 takenInThisCall.add(key);
@@ -75,6 +74,12 @@ public class SeatHoldService {
                 redisTemplate.delete(takenInThisCall);
             }
             throw new SeatAlreadyHeldException("Seat " + seat.getSeatNumber() + " is held by another user");
+            // Try to create Redis key
+            // If created → we got the seat, remember it
+            // If not created → key already exists
+            // Then Check who owns the key
+            // If it's us → already holding the seat, continue
+            // If it's another user → rollback seats we got earlier and throw error
         }
 
         log.info("User {} holds seats {} of show {} for {} seconds", userId, seatIds, showId, holdTtlSeconds);
