@@ -47,7 +47,7 @@ public class BookingService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidCredentialsException("User no longer exists"));
 
-        Show show = showRepository.findById(showId)
+        Show show = showRepository.findByIdWithMovie(showId)
                 .orElseThrow(() -> new ShowNotFoundException("Show not found with id: " + showId));
 
         List<Seat> seats = seatFetcher.apply(request.getSeatIds());
@@ -91,7 +91,7 @@ public class BookingService {
 
     // Internal lookup with NO ownership check. Only other service methods should call this.
     public Booking getBookingById(Long id) {
-        return bookingRepository.findById(id)
+        return bookingRepository.findByIdWithShowAndMovie(id)
                 .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + id));
     }
 
