@@ -18,23 +18,26 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class DevDataSeeder implements CommandLineRunner {
 
-    private static final String ADMIN_EMAIL = "admin@ticket.com";
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
-        if (userRepository.existsByEmail(ADMIN_EMAIL)) {
+        createIfMissing("Admin", "admin@ticket.com", "Admin@123", Role.ADMIN);
+        createIfMissing("Organizer", "organizer@ticket.com", "Organizer@123", Role.ORGANIZER);
+    }
+
+    private void createIfMissing(String name, String email, String password, Role role) {
+        if (userRepository.existsByEmail(email)) {
             return;
         }
-        User admin = new User();
-        admin.setName("Admin");
-        admin.setEmail(ADMIN_EMAIL);
-        admin.setPasswordHash(passwordEncoder.encode("Admin@123"));
-        admin.setRole(Role.ADMIN);
-        admin.setCreatedAt(LocalDateTime.now());
-        userRepository.save(admin);
-        log.info("Seeded dev admin user: {}", ADMIN_EMAIL);
+        User user = new User();
+        user.setName(name);
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(password));
+        user.setRole(role);
+        user.setCreatedAt(LocalDateTime.now());
+        userRepository.save(user);
+        log.info("Seeded dev user: {} ({})", email, role);
     }
 }
