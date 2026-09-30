@@ -1,31 +1,33 @@
 package com.rahul.ticketbooking.service;
 
+import com.rahul.ticketbooking.dto.MovieResponse;
 import com.rahul.ticketbooking.dto.MovieShowCountResponse;
 import com.rahul.ticketbooking.dto.MovieSummaryResponse;
 import com.rahul.ticketbooking.dto.redis.PageResponse;
 import com.rahul.ticketbooking.entity.Movie;
 import com.rahul.ticketbooking.repository.MovieRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MovieService {
 
     private final MovieRepository movieRepository;
 
-
     // A new movie changes the total count and can change any page,
-    // so we cannot know which keys are wrong. We remove all pages of this cach
+    // so we remove all pages of this cache.
     @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
     @CacheEvict(cacheNames = "movieSummaryPage", allEntries = true)
     public Movie createMovie(Movie movie) {
@@ -39,6 +41,17 @@ public class MovieService {
     public Movie getMovieById(Long id) {
         return movieRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
+    }
+
+    // Cached by id. A missing movie returns null, and that "empty result" is cached for 1 minute
+    // (see CacheConfig), so repeated requests for a bad id never reach the database.
+    @Cacheable(cacheNames = "movieById", key = "#id", sync = true)
+    @Transactional(readOnly = true)
+    public MovieResponse getMovieDetails(Long id) {
+        log.info("CACHE MISS - loading movie {} from DB", id);
+        return movieRepository.findById(id)
+                .map(m -> new MovieResponse(m.getId(), m.getName(), m.getDescription()))
+                .orElse(null);
     }
 
     //reproduces N+1 => use List<Movie> movies = movieRepository.findAll();
@@ -76,34 +89,25 @@ public class MovieService {
         return movieRepository.findAllSummaries();
     }
 
-
-    @Transactional(readOnly = true)
-    public Page<MovieSummaryResponse> searchMoviesByName(String name, Pageable pageable) {
-        return movieRepository.searchByName(name, pageable);
-    }
-
-
-
-    //pages
-//    @Transactional(readOnly = true)
-//    public Page<MovieSummaryResponse> getMovieSummaryPage(Pageable pageable) {
-//        return movieRepository.findSummaryPage(pageable);
-//    }
-
-    // Cache-aside: check Redis first. On a miss, run the method and store the result.
-    // Key example in Redis: movieSummaryPage::0-20-id: ASC
-
-    //sync => The limit: this lock works inside one app copy only.
-    @Cacheable(cacheNames = "movieSummaryPage", sync = true, key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort")
+    // sync = true: on a stampede only one request rebuilds the entry, the others wait and reuse it
+    @Cacheable(cacheNames = "movieSummaryPage", sync = true,
+            key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort")
     @Transactional(readOnly = true)
     public PageResponse<MovieSummaryResponse> getMovieSummaryPage(Pageable pageable) {
+        log.info("CACHE MISS - loading summary page from DB");
         Page<MovieSummaryResponse> page = movieRepository.findSummaryPage(pageable);
         return new PageResponse<>(
-                new ArrayList<>(page.getContent()),   // plain ArrayList, easy for Jackson to rebuild
+                new ArrayList<>(page.getContent()),
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages());
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<MovieSummaryResponse> searchMoviesByName(String name, Pageable pageable) {
+        return movieRepository.searchByName(name, pageable);
     }
 
 }

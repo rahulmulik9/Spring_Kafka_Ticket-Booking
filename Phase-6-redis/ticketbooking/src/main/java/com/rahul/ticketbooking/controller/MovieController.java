@@ -1,5 +1,6 @@
 package com.rahul.ticketbooking.controller;
 
+import com.rahul.ticketbooking.dto.MovieResponse;
 import com.rahul.ticketbooking.dto.MovieShowCountResponse;
 import com.rahul.ticketbooking.dto.MovieSummaryResponse;
 import com.rahul.ticketbooking.dto.redis.PageResponse;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,10 +35,6 @@ public class MovieController {
         return movieService.getAllMovies();
     }
 
-    @GetMapping("/{id}")
-    public Movie getMovieById(@PathVariable Long id) {
-        return movieService.getMovieById(id);
-    }
 
     // TEMPORARY: used to reproduce N+1 in Phase 3
     @GetMapping("/with-show-count")
@@ -49,9 +47,17 @@ public class MovieController {
         return movieService.getMovieSummaries();
     }
 
-    @GetMapping("/summary")
-    public PageResponse<MovieSummaryResponse> getMovieSummaryPage(@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
-        return movieService.getMovieSummaryPage(pageable);
+//    @GetMapping("/{id}")
+//    public Movie getMovieById(@PathVariable Long id) {
+//        return movieService.getMovieById(id);
+//    }
+    @GetMapping("/{id}")
+    public ResponseEntity<MovieResponse> getMovieById(@PathVariable Long id) {
+        MovieResponse movie = movieService.getMovieDetails(id);
+        if (movie == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(movie);
     }
 
     @GetMapping("/search")
