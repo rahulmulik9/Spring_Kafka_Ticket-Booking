@@ -1,252 +1,904 @@
 {
   "info": {
-    "name": "Ticket Booking System",
-    "description": "Phase 1 (CRUD) + Phase 2 (Transactions, Errors, Validation) endpoints.",
+    "name": "Ticket Booking API (end of Phase 5)",
+    "description": "END OF PHASE 5 (security). Run in this order:\n1. Auth > Login as ADMIN. Then Movies > Create Movie, Shows > Create Show.\n2. Auth > Login as USER. Then Seats > Get Seats By Show, Bookings > Create Booking, Get Booking.\n3. Ownership: Auth > Register second USER, Login as second USER. Then Bookings > Get Booking and Cancel Booking should return 403.\n4. Roles: with the USER token, Movies > Create Movie should return 403. Login as ORGANIZER and it returns 201.\n5. Tokens: Auth > Refresh Token returns a new pair. Sending the old refresh token again returns 401. Logout returns 204.\nVariables (token, refreshToken, movieId, showId, seatId1, seatId2, bookingId) are saved by test scripts.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8080" },
-    { "key": "movieId", "value": "1" },
-    { "key": "showId", "value": "1" },
-    { "key": "seatId", "value": "1" },
-    { "key": "bookingId", "value": "1" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "movieId",
+      "value": "1"
+    },
+    {
+      "key": "showId",
+      "value": "1"
+    },
+    {
+      "key": "seatId1",
+      "value": "1"
+    },
+    {
+      "key": "seatId2",
+      "value": "2"
+    },
+    {
+      "key": "bookingId",
+      "value": "1"
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    }
   ],
   "item": [
     {
-      "name": "Public",
+      "name": "1. Auth",
       "item": [
         {
-          "name": "Health check message",
+          "name": "Register (USER)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul\",\n  \"email\": \"Rahul@Test.com\",\n  \"password\": \"Secret@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 created, or 409 if already registered', function () { pm.expect([201, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as ADMIN (saves token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@ticket.com\",\n  \"password\": \"Admin@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('token', json.accessToken);",
+                  "pm.collectionVariables.set('refreshToken', pm.response.json().refreshToken);",
+                  "console.log('Token saved (admin)');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as USER (saves token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"Rahul@Test.com\",\n  \"password\": \"Secret@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('token', json.accessToken);",
+                  "pm.collectionVariables.set('refreshToken', pm.response.json().refreshToken);",
+                  "console.log('Token saved (user)');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me (who am I)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/public", "host": ["{{baseUrl}}"], "path": ["public"] }
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login as ORGANIZER (saves token)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"organizer@ticket.com\",\n  \"password\": \"Organizer@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('token', pm.response.json().accessToken);",
+                  "pm.collectionVariables.set('refreshToken', pm.response.json().refreshToken);",
+                  "console.log('Token saved (organizer)');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register second USER (Other)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Other\",\n  \"email\": \"other@test.com\",\n  \"password\": \"Other@1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 created, or 409 if already registered', function () { pm.expect([201, 409]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as second USER (saves token)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"other@test.com\",\n  \"password\": \"Other@1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('token', pm.response.json().accessToken);",
+                  "pm.collectionVariables.set('refreshToken', pm.response.json().refreshToken);",
+                  "console.log('Token saved (other user)');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token (saves new tokens)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('token', json.accessToken);",
+                  "pm.collectionVariables.set('refreshToken', json.refreshToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logout (deletes refresh token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            }
           }
         }
       ]
     },
     {
-      "name": "Movies",
+      "name": "2. Movies",
       "item": [
         {
-          "name": "Create movie",
+          "name": "Create Movie",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": { "raw": "{{baseUrl}}/movies", "host": ["{{baseUrl}}"], "path": ["movies"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/movies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Interstellar\",\n  \"description\": \"A team of explorers travel through a wormhole in space.\",\n  \"durationMinutes\": 169\n}"
+              "raw": "{\n  \"name\": \"Avengers\",\n  \"description\": \"Superhero movie\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('movieId', pm.response.json().id); }",
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Movies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/movies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies"
+              ]
             }
           }
         },
         {
-          "name": "Get all movies",
+          "name": "Get Movie By Id",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/movies", "host": ["{{baseUrl}}"], "path": ["movies"] }
-          }
-        },
-        {
-          "name": "Get movie by id",
-          "request": {
-            "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/movies/{{movieId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["movies", "{{movieId}}"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Shows",
-      "item": [
-        {
-          "name": "Create show for movie",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": {
-              "raw": "{{baseUrl}}/movies/{{movieId}}/shows",
-              "host": ["{{baseUrl}}"],
-              "path": ["movies", "{{movieId}}", "shows"]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"showTime\": \"2026-10-01T18:00:00\",\n  \"screenName\": \"Screen 1\"\n}"
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies",
+                "{{movieId}}"
+              ]
             }
           }
         },
         {
-          "name": "Get shows by movie",
+          "name": "Movies With Show Count",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/movies/{{movieId}}/shows",
-              "host": ["{{baseUrl}}"],
-              "path": ["movies", "{{movieId}}", "shows"]
+              "raw": "{{baseUrl}}/movies/with-show-count?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies",
+                "with-show-count"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Movie Summaries (all)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/movies/summary/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies",
+                "summary",
+                "all"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Movie Summaries (paged)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/movies/summary?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Movies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/movies/search?name=Avengers&page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "Avengers"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
             }
           }
         }
       ]
     },
     {
-      "name": "Seats",
+      "name": "3. Shows",
       "item": [
         {
-          "name": "Get seats by show",
+          "name": "Create Show",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/movies/{{movieId}}/shows",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies",
+                "{{movieId}}",
+                "shows"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"showTime\": \"2026-12-15T18:00:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('showId', pm.response.json().id); }",
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Shows By Movie",
           "request": {
             "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/movies/{{movieId}}/shows",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies",
+                "{{movieId}}",
+                "shows"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Seats",
+      "item": [
+        {
+          "name": "Get Seats By Show (saves 2 free seat ids)",
+          "request": {
+            "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/shows/{{showId}}/seats",
-              "host": ["{{baseUrl}}"],
-              "path": ["shows", "{{showId}}", "seats"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows",
+                "{{showId}}",
+                "seats"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var seats = pm.response.json();",
+                  "var free = seats.filter(function (s) { return s.status === 'AVAILABLE'; });",
+                  "if (free.length >= 2) {",
+                  "  pm.collectionVariables.set('seatId1', free[0].id);",
+                  "  pm.collectionVariables.set('seatId2', free[1].id);",
+                  "}",
+                  "pm.test('Show has at least 2 free seats', function () { pm.expect(free.length).to.be.at.least(2); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Bookings",
+      "item": [
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{showId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bookings",
+                "{{showId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seatIds\": [\n    \"{{seatId1}}\",\n    \"{{seatId2}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Name and email now come from the logged-in user's token, not the body. Log in first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.collectionVariables.set('bookingId', pm.response.json().id); }",
+                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Booking",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bookings",
+                "{{bookingId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bookings",
+                "{{bookingId}}",
+                "cancel"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Booking (no token, expect 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "bookings",
+                "{{bookingId}}"
+              ]
             }
           }
         }
       ]
     },
     {
-      "name": "Bookings",
+      "name": "6. Other",
       "item": [
         {
-          "name": "Create booking - success",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/bookings/{{showId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "bookings", "{{showId}}"]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"seatIds\": [{{seatId}}],\n  \"customerName\": \"Riya Sharma\",\n  \"customerEmail\": \"riya@test.com\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Get booking by id",
+          "name": "Public hello",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "bookings", "{{bookingId}}"]
-            }
-          }
-        },
-        {
-          "name": "Cancel booking",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/cancel",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "bookings", "{{bookingId}}", "cancel"]
-            }
-          }
-        },
-        {
-          "name": "Error - Show not found (404)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/bookings/9999",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "bookings", "9999"]
+              "raw": "{{baseUrl}}/public",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public"
+              ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"seatIds\": [{{seatId}}],\n  \"customerName\": \"Riya Sharma\",\n  \"customerEmail\": \"riya@test.com\"\n}"
-            }
+            "description": "Locked after Step 4. Step 5 decides whether it becomes public."
           }
         },
         {
-          "name": "Error - Seat already booked (409)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/bookings/{{showId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "bookings", "{{showId}}"]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"seatIds\": [{{seatId}}],\n  \"customerName\": \"Duplicate Attempt\",\n  \"customerEmail\": \"dup@test.com\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Error - Booking not found (404)",
+          "name": "Health",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/bookings/99999",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "bookings", "99999"]
-            }
-          }
-        },
-        {
-          "name": "Error - Already cancelled (409)",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/cancel",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "bookings", "{{bookingId}}", "cancel"]
-            }
-          }
-        },
-        {
-          "name": "Validation - Empty seatIds (400)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/bookings/{{showId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "bookings", "{{showId}}"]
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"seatIds\": [],\n  \"customerName\": \"Riya Sharma\",\n  \"customerEmail\": \"riya@test.com\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Validation - Blank customer name (400)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/bookings/{{showId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "bookings", "{{showId}}"]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"seatIds\": [{{seatId}}],\n  \"customerName\": \"\",\n  \"customerEmail\": \"riya@test.com\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Validation - Invalid email (400)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/bookings/{{showId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "bookings", "{{showId}}"]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"seatIds\": [{{seatId}}],\n  \"customerName\": \"Riya Sharma\",\n  \"customerEmail\": \"not-an-email\"\n}"
+            "auth": {
+              "type": "noauth"
             }
           }
         }
