@@ -39,8 +39,8 @@ public class SecurityConfig {
                         .accessDeniedHandler(jwtAccessDeniedHandler))            // 403: logged in, wrong role
                 .authorizeHttpRequests(auth -> auth
                         // 1. Public: no token needed
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/actuator/health", "/public").permitAll()
-                        // 2. Public browsing: only GET (read) requests
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
+                                "/actuator/health", "/public").permitAll() // 2. Public browsing: only GET (read) requests
                         .requestMatchers(HttpMethod.GET, "/movies/**", "/shows/*/seats").permitAll()
                         // 3. Creating movies and shows: organizers and admins only
                         .requestMatchers(HttpMethod.POST, "/movies", "/movies/*/shows")
