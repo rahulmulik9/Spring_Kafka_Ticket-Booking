@@ -7,6 +7,7 @@ import com.rahul.ticketbooking.repository.BookingRepository;
 import com.rahul.ticketbooking.repository.SeatRepository;
 import com.rahul.ticketbooking.repository.ShowRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ public class BookingService {
     private final ShowRepository showRepository;
 
     // Step 5: pessimistic. SELECT ... FOR UPDATE, others wait for the row lock.
+    @PreAuthorize("isAuthenticated()")
     @Transactional
     public Booking createBooking(Long showId, BookingRequest request) {
         return book(showId, request, seatRepository::findAllByIdForUpdate);
@@ -83,6 +85,7 @@ public class BookingService {
                 .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + id));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @Transactional
     public Booking cancelBooking(Long id) {
         Booking booking = getBookingById(id);

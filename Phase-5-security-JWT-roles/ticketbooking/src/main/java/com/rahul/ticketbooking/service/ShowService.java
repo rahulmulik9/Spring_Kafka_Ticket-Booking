@@ -7,6 +7,7 @@ import com.rahul.ticketbooking.entity.Show;
 import com.rahul.ticketbooking.repository.SeatRepository;
 import com.rahul.ticketbooking.repository.ShowRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ public class ShowService {
     private final SeatRepository seatRepository;
     private final MovieService movieService;
 
+    @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
     public Show createShow(Long movieId, Show show) {
         Movie movie = movieService.getMovieById(movieId);
         show.setMovie(movie);
