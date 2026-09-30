@@ -2,9 +2,11 @@ package com.rahul.ticketbooking.service;
 
 import com.rahul.ticketbooking.dto.MovieShowCountResponse;
 import com.rahul.ticketbooking.dto.MovieSummaryResponse;
+import com.rahul.ticketbooking.dto.redis.PageResponse;
 import com.rahul.ticketbooking.entity.Movie;
 import com.rahul.ticketbooking.repository.MovieRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -68,16 +70,32 @@ public class MovieService {
         return movieRepository.findAllSummaries();
     }
 
-    //pages
-    @Transactional(readOnly = true)
-    public Page<MovieSummaryResponse> getMovieSummaryPage(Pageable pageable) {
-        return movieRepository.findSummaryPage(pageable);
-    }
-
 
     @Transactional(readOnly = true)
     public Page<MovieSummaryResponse> searchMoviesByName(String name, Pageable pageable) {
         return movieRepository.searchByName(name, pageable);
+    }
+
+
+
+    //pages
+//    @Transactional(readOnly = true)
+//    public Page<MovieSummaryResponse> getMovieSummaryPage(Pageable pageable) {
+//        return movieRepository.findSummaryPage(pageable);
+//    }
+
+    // Cache-aside: check Redis first. On a miss, run the method and store the result.
+    // Key example in Redis: movieSummaryPage::0-20-id: ASC
+    @Cacheable(cacheNames = "movieSummaryPage", key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort")
+    @Transactional(readOnly = true)
+    public PageResponse<MovieSummaryResponse> getMovieSummaryPage(Pageable pageable) {
+        Page<MovieSummaryResponse> page = movieRepository.findSummaryPage(pageable);
+        return new PageResponse<>(
+                new ArrayList<>(page.getContent()),   // plain ArrayList, easy for Jackson to rebuild
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages());
     }
 
 }
