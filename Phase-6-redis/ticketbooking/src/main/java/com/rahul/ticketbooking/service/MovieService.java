@@ -92,7 +92,9 @@ public class MovieService {
 
     // Cache-aside: check Redis first. On a miss, run the method and store the result.
     // Key example in Redis: movieSummaryPage::0-20-id: ASC
-    @Cacheable(cacheNames = "movieSummaryPage", key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort")
+
+    //sync => The limit: this lock works inside one app copy only.
+    @Cacheable(cacheNames = "movieSummaryPage", sync = true, key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort")
     @Transactional(readOnly = true)
     public PageResponse<MovieSummaryResponse> getMovieSummaryPage(Pageable pageable) {
         Page<MovieSummaryResponse> page = movieRepository.findSummaryPage(pageable);
