@@ -1,9 +1,6 @@
 package com.rahul.ticketbooking.controller;
 
-import com.rahul.ticketbooking.dto.LoginRequest;
-import com.rahul.ticketbooking.dto.LoginResponse;
-import com.rahul.ticketbooking.dto.RegisterRequest;
-import com.rahul.ticketbooking.dto.UserResponse;
+import com.rahul.ticketbooking.dto.*;
 import com.rahul.ticketbooking.entity.User;
 import com.rahul.ticketbooking.mapper.UserMapper;
 import com.rahul.ticketbooking.service.AuthService;
@@ -39,5 +36,17 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<AuthUser> me(@AuthenticationPrincipal AuthUser user) {
         return ResponseEntity.ok(user);
+    }
+
+
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(authService.refresh(request));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest request) {
+        authService.logout(request);
+        return ResponseEntity.noContent().build();
     }
 }
