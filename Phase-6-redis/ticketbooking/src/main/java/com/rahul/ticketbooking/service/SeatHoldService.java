@@ -94,7 +94,6 @@ public class SeatHoldService {
             String key = KEY_PREFIX + seatId;
 
             // Only the owner can release. Other people's holds and missing holds are ignored silently.
-            // Note: get then delete are two commands, so there is a tiny gap. A Lua script would close it.
             if (owner.equals(redisTemplate.opsForValue().get(key))) {
                 redisTemplate.delete(key);
             }
