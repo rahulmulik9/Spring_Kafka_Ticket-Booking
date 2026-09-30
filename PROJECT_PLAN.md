@@ -830,15 +830,15 @@ Tick a box when the step works and is committed. Update "Current position" at th
 - [x] Step 8: Document and tag `phase-4-locking`
 
 ## Phase 5: Security (JWT and Roles)
-- [ ] Step 1: Users, roles, and passwords
-- [ ] Step 2: Registration
-- [ ] Step 3: Login with JWT
-- [ ] Step 4: JWT filter
-- [ ] Step 5: Access rules by URL
-- [ ] Step 6: Access rules on methods
-- [ ] Step 7: Bookings belong to users
-- [ ] Step 8: Refresh token and logout
-- [ ] Step 9: Security tests and tag `phase-5-security`
+- [x] Step 1: Users, roles, and passwords
+- [x] Step 2: Registration
+- [x] Step 3: Login with JWT
+- [x] Step 4: JWT filter
+- [x] Step 5: Access rules by URL
+- [x] Step 6: Access rules on methods
+- [x] Step 7: Bookings belong to users
+- [x] Step 8: Refresh token and logout
+- [x] Step 9: Security tests and tag `phase-5-security`
 
 ## Phase 6: Redis (Caching and Seat Hold)
 - [ ] Step 1: Add Redis
