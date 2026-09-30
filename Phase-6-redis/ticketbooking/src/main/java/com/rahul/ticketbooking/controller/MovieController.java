@@ -2,6 +2,7 @@ package com.rahul.ticketbooking.controller;
 
 import com.rahul.ticketbooking.dto.MovieShowCountResponse;
 import com.rahul.ticketbooking.dto.MovieSummaryResponse;
+import com.rahul.ticketbooking.dto.redis.PageResponse;
 import com.rahul.ticketbooking.entity.Movie;
 import com.rahul.ticketbooking.service.MovieService;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +50,7 @@ public class MovieController {
     }
 
     @GetMapping("/summary")
-    public Page<MovieSummaryResponse> getMovieSummaryPage(@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+    public PageResponse<MovieSummaryResponse> getMovieSummaryPage(@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
         return movieService.getMovieSummaryPage(pageable);
     }
 
