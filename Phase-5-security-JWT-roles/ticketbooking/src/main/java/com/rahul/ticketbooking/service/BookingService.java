@@ -6,7 +6,10 @@ import com.rahul.ticketbooking.exception.*;
 import com.rahul.ticketbooking.repository.BookingRepository;
 import com.rahul.ticketbooking.repository.SeatRepository;
 import com.rahul.ticketbooking.repository.ShowRepository;
+import com.rahul.ticketbooking.repository.UserRepository;
+import com.rahul.ticketbooking.security.AuthUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,22 +26,27 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final SeatRepository seatRepository;
     private final ShowRepository showRepository;
+    private final UserRepository userRepository;
 
     // Step 5: pessimistic. SELECT ... FOR UPDATE, others wait for the row lock.
     @PreAuthorize("isAuthenticated()")
     @Transactional
-    public Booking createBooking(Long showId, BookingRequest request) {
-        return book(showId, request, seatRepository::findAllByIdForUpdate);
+    public Booking createBooking(Long showId, BookingRequest request, Long userId) {
+        return book(showId, request, userId, seatRepository::findAllByIdForUpdate);
     }
 
     // Step 7: optimistic, for comparison only. Relies on @Version, no row lock taken on read.
     @Transactional
-    public Booking createBookingOptimistic(Long showId, BookingRequest request) {
-        return book(showId, request, seatRepository::findAllById);
+    public Booking createBookingOptimistic(Long showId, BookingRequest request, Long userId) {
+        return book(showId, request, userId, seatRepository::findAllById);
     }
 
     // Step 7: shared logic. Only how seats are fetched differs between the two callers above.
-    private Booking book(Long showId, BookingRequest request, Function<List<Long>, List<Seat>> seatFetcher) {
+    private Booking book(Long showId, BookingRequest request, Long userId,
+                         Function<List<Long>, List<Seat>> seatFetcher) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidCredentialsException("User no longer exists"));
+
         Show show = showRepository.findById(showId)
                 .orElseThrow(() -> new ShowNotFoundException("Show not found with id: " + showId));
 
@@ -70,8 +78,9 @@ public class BookingService {
 
         Booking booking = new Booking();
         booking.setShow(show);
-        booking.setCustomerName(request.getCustomerName());
-        booking.setCustomerEmail(request.getCustomerEmail());
+        booking.setUser(user);
+        booking.setCustomerName(user.getName());
+        booking.setCustomerEmail(user.getEmail());
         booking.setTotalAmount(totalAmount);
         booking.setStatus(BookingStatus.CONFIRMED);
         booking.setCreatedAt(LocalDateTime.now());
@@ -80,15 +89,27 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
+    // Internal lookup with NO ownership check. Only other service methods should call this.
     public Booking getBookingById(Long id) {
         return bookingRepository.findById(id)
                 .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + id));
     }
 
+    // Used by the controller. Same lookup, plus the ownership check.
+    // @Transactional so the lazy user can be read while the session is still open.
+    @PreAuthorize("isAuthenticated()")
+    @Transactional(readOnly = true)
+    public Booking getBookingForUser(Long id, AuthUser caller) {
+        Booking booking = getBookingById(id);
+        checkOwnerOrAdmin(booking, caller);
+        return booking;
+    }
+
     @PreAuthorize("isAuthenticated()")
     @Transactional
-    public Booking cancelBooking(Long id) {
+    public Booking cancelBooking(Long id, AuthUser caller) {
         Booking booking = getBookingById(id);
+        checkOwnerOrAdmin(booking, caller);
 
         if (booking.getStatus() == BookingStatus.CANCELLED) {
             throw new BookingAlreadyCancelledException("Booking " + id + " is already cancelled");
@@ -102,5 +123,14 @@ public class BookingService {
 
         seatRepository.saveAll(booking.getSeats());
         return bookingRepository.save(booking);
+    }
+
+    // The owner or an admin may proceed. Anyone else gets a 403 (AccessDeniedException).
+    private void checkOwnerOrAdmin(Booking booking, AuthUser caller) {
+        boolean isOwner = booking.getUser().getId().equals(caller.getId());
+        boolean isAdmin = "ADMIN".equals(caller.getRole());
+        if (!isOwner && !isAdmin) {
+            throw new AccessDeniedException("You can only access your own bookings");
+        }
     }
 }

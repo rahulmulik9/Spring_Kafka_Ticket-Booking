@@ -25,6 +25,11 @@ public class Booking {
     @JsonIgnore
     private Show show;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    @JsonIgnore
+    private User user;
+
     @Column(name = "customer_name")
     private String customerName;
 
