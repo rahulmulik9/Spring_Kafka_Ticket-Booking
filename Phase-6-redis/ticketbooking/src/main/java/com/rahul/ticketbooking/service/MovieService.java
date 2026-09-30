@@ -6,6 +6,7 @@ import com.rahul.ticketbooking.dto.redis.PageResponse;
 import com.rahul.ticketbooking.entity.Movie;
 import com.rahul.ticketbooking.repository.MovieRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,7 +23,11 @@ public class MovieService {
 
     private final MovieRepository movieRepository;
 
+
+    // A new movie changes the total count and can change any page,
+    // so we cannot know which keys are wrong. We remove all pages of this cach
     @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
+    @CacheEvict(cacheNames = "movieSummaryPage", allEntries = true)
     public Movie createMovie(Movie movie) {
         return movieRepository.save(movie);
     }
