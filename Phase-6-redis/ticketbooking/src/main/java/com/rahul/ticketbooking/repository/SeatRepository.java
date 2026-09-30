@@ -13,6 +13,11 @@ import java.util.List;
 public interface SeatRepository extends JpaRepository<Seat, Long> {
     List<Seat> findByShowId(Long showId);
 
+    // Seats with these ids that belong to this show.
+    // A seat from another show is simply missing from the result.
+    @Query("select s from Seat s where s.id in :ids and s.show.id = :showId")
+    List<Seat> findByIdInAndShowId(@Param("ids") List<Long> ids, @Param("showId") Long showId);
+
     /*
      * Step 5: Pessimistic locking.
      *  - SELECT ... FOR UPDATE: the first transaction locks the seat rows, others wait.

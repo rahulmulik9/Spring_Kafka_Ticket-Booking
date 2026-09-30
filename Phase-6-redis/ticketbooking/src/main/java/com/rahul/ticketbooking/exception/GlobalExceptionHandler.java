@@ -25,7 +25,11 @@ public class GlobalExceptionHandler {
     }
 
 
-    @ExceptionHandler({SeatAlreadyBookedException.class, BookingAlreadyCancelledException.class, SeatDoesNotBelongToShowException.class, EmailAlreadyExistsException.class})
+    @ExceptionHandler({SeatAlreadyBookedException.class,
+            BookingAlreadyCancelledException.class,
+            SeatDoesNotBelongToShowException.class,
+            EmailAlreadyExistsException.class,
+            SeatAlreadyHeldException.class})
     public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, errorCode(ex), ex.getMessage(), request);
     }
@@ -91,5 +95,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, "FORBIDDEN",
                 "You do not have permission to perform this action.", request);
     }
+
+
 
 }
