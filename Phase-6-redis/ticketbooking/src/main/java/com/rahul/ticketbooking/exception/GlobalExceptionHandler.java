@@ -4,6 +4,7 @@ import com.rahul.ticketbooking.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -97,5 +98,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleSeatBusy(SeatBusyException ex, HttpServletRequest request) {
         log.warn("Seat busy at {}: {}", request.getRequestURI(), ex.getMessage());
         return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "SEAT_BUSY", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(TooManyLoginAttemptsException.class)
+    public ResponseEntity<ErrorResponse> handleTooManyLoginAttempts(TooManyLoginAttemptsException ex, HttpServletRequest request) {
+        log.warn("Login rate limit hit at {}", request.getRequestURI());
+        ResponseEntity<ErrorResponse> response = buildResponse(
+                HttpStatus.TOO_MANY_REQUESTS, "TOO_MANY_LOGIN_ATTEMPTS", ex.getMessage(), request);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
+                .body(response.getBody());
     }
 }

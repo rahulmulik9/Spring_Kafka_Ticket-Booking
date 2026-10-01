@@ -20,9 +20,13 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final LoginRateLimiter loginRateLimiter;
 
     public LoginResponse login(LoginRequest request) {
         String email = request.getEmail().trim().toLowerCase();
+
+        // Step 8: count this attempt first. A blocked request never reaches the database or BCrypt.
+        loginRateLimiter.checkAndCount(email);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
@@ -31,6 +35,7 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
+        loginRateLimiter.reset(email);
         return buildTokens(user);
     }
 

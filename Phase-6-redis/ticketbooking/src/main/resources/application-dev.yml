@@ -33,3 +33,7 @@ jwt:
 
 seat-hold:
   ttl-seconds: 30   # short on purpose so you can watch it expire. The default in code is 300 (5 minutes)
+
+login-limit:
+  max-attempts: 5
+  window-seconds: 60   # short on purpose so you can watch it reset. The default in code is 300
