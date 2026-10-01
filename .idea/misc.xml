@@ -9,6 +9,9 @@
         <option value="$PROJECT_DIR$/Phase-7-microservices/services/user-service/pom.xml" />
         <option value="$PROJECT_DIR$/Phase-7-microservices/services/cinema-service/pom.xml" />
         <option value="$PROJECT_DIR$/Phase-7-microservices/services/booking-service/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-7-microservices/services/payment-service/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-7-microservices/services/notification-service/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-7-microservices/services/api-gateway/pom.xml" />
       </list>
     </option>
   </component>
