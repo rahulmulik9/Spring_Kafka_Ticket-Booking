@@ -841,15 +841,15 @@ Tick a box when the step works and is committed. Update "Current position" at th
 - [x] Step 9: Security tests and tag `phase-5-security`
 
 ## Phase 6: Redis (Caching and Seat Hold)
-- [ ] Step 1: Add Redis
-- [ ] Step 2: Cache the catalog
-- [ ] Step 3: Cache invalidation
-- [ ] Step 4: Cache problems
-- [ ] Step 5: Seat hold
-- [ ] Step 6: Connect the hold to booking
-- [ ] Step 7: Distributed lock
-- [ ] Step 8: Rate limiting on login
-- [ ] Step 9: Measure and tag `phase-6-redis`
+- [x] Step 1: Add Redis
+- [x] Step 2: Cache the catalog
+- [x] Step 3: Cache invalidation
+- [x] Step 4: Cache problems
+- [x] Step 5: Seat hold
+- [x] Step 6: Connect the hold to booking
+- [x] Step 7: Distributed lock
+- [x] Step 8: Rate limiting on login
+- [x] Step 9: Measure and tag `phase-6-redis`
 
 ## Phase 7: Microservices Split
 - [ ] Step 1: Define boundaries
