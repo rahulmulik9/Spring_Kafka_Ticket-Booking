@@ -1,4 +1,4 @@
-package com.rahul.ticketbooking.config;
+package com.rahul.ticketbooking.config.redis;
 
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
