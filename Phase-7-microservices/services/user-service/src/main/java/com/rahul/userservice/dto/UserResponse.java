@@ -1,6 +1,6 @@
 package com.rahul.userservice.dto;
 
-import com.rahul.ticketbooking.entity.Role;
+import com.rahul.userservice.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
