@@ -1,4 +1,5 @@
 services:
+  # Old Phase 6 database. Kept until the last service is moved, then removed.
   postgres:
     image: postgres:18
     container_name: ticketdb
@@ -10,6 +11,54 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql
+
+  user-db:
+    image: postgres:18
+    container_name: userdb
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: ticketuser
+      POSTGRES_PASSWORD: ticketpass
+    ports:
+      - "5433:5432"
+    volumes:
+      - userdata:/var/lib/postgresql
+
+  cinema-db:
+    image: postgres:18
+    container_name: cinemadb
+    environment:
+      POSTGRES_DB: cinemadb
+      POSTGRES_USER: ticketuser
+      POSTGRES_PASSWORD: ticketpass
+    ports:
+      - "5434:5432"
+    volumes:
+      - cinemadata:/var/lib/postgresql
+
+  booking-db:
+    image: postgres:18
+    container_name: bookingdb
+    environment:
+      POSTGRES_DB: bookingdb
+      POSTGRES_USER: ticketuser
+      POSTGRES_PASSWORD: ticketpass
+    ports:
+      - "5435:5432"
+    volumes:
+      - bookingdata:/var/lib/postgresql
+
+  payment-db:
+    image: postgres:18
+    container_name: paymentdb
+    environment:
+      POSTGRES_DB: paymentdb
+      POSTGRES_USER: ticketuser
+      POSTGRES_PASSWORD: ticketpass
+    ports:
+      - "5436:5432"
+    volumes:
+      - paymentdata:/var/lib/postgresql
 
   redis:
     image: redis:7-alpine
@@ -24,3 +73,7 @@ services:
 
 volumes:
   pgdata:
+  userdata:
+  cinemadata:
+  bookingdata:
+  paymentdata:
