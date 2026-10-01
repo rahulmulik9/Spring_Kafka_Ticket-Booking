@@ -7,6 +7,7 @@
         <option value="$PROJECT_DIR$/Phase-7-microservices/services/config-server/pom.xml" />
         <option value="$PROJECT_DIR$/Phase-7-microservices/services/eureka-server/pom.xml" />
         <option value="$PROJECT_DIR$/Phase-7-microservices/services/user-service/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-7-microservices/services/cinema-service/pom.xml" />
       </list>
     </option>
   </component>
