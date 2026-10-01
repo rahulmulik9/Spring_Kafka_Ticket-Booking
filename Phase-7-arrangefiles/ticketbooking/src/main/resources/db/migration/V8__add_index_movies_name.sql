@@ -1,0 +1,1 @@
+CREATE INDEX idx_movies_name ON movies (name);
