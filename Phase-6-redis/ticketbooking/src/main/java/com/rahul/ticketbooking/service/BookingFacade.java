@@ -8,10 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /*
- * Phase 5, Step 7: the caller now comes from the JWT (AuthUser), not from the request body.
- *  - The email in audit and log lines is the logged-in user's email.
- *  - The service receives only the user id.
+ * Phase 6, Step 6: booking now respects the Redis seat hold.
+ *  - Before booking: the caller must hold every seat they want.
+ *  - After booking is saved: the holds are removed (best effort).
+ *  - The database lock from Phase 4 is still the final guard against double booking.
  */
 @Slf4j
 @Service
@@ -22,6 +25,7 @@ public class BookingFacade {
 
     private final BookingService bookingService;
     private final AuditService auditService;
+    private final SeatHoldService seatHoldService;
 
     // BiFunction only takes two arguments, and we now pass three, so a tiny interface replaces it.
     private interface BookingCall {
@@ -39,8 +43,14 @@ public class BookingFacade {
     private Booking attempt(Long showId, BookingRequest request, AuthUser user, BookingCall bookingCall) {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
+                // Step 6: the user must hold every seat before booking
+                seatHoldService.assertHeldByUser(request.getSeatIds(), user.getId());
+
                 Booking booking = bookingCall.call(showId, request, user.getId());
                 auditService.logAttempt(showId, user.getEmail(), true, null);
+
+                // Only after the booking is committed do we remove the holds
+                releaseHoldsQuietly(request.getSeatIds(), user.getId());
                 return booking;
             } catch (ObjectOptimisticLockingFailureException ex) {
                 log.warn("Seat conflict for {} (attempt {}/{})",
@@ -55,5 +65,16 @@ public class BookingFacade {
             }
         }
         throw new IllegalStateException("Unreachable");
+    }
+
+    // The booking is already saved. If Redis fails here, we must not fail the customer's booking.
+    // The holds will expire by themselves anyway.
+    private void releaseHoldsQuietly(List<Long> seatIds, Long userId) {
+        try {
+            seatHoldService.releaseSeats(seatIds, userId);
+        } catch (RuntimeException ex) {
+            log.warn("Booking saved, but releasing holds failed. They will expire by TTL. Reason: {}",
+                    ex.getMessage());
+        }
     }
 }

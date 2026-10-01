@@ -25,11 +25,7 @@ public class GlobalExceptionHandler {
     }
 
 
-    @ExceptionHandler({SeatAlreadyBookedException.class,
-            BookingAlreadyCancelledException.class,
-            SeatDoesNotBelongToShowException.class,
-            EmailAlreadyExistsException.class,
-            SeatAlreadyHeldException.class})
+    @ExceptionHandler({SeatAlreadyBookedException.class, BookingAlreadyCancelledException.class, SeatDoesNotBelongToShowException.class, EmailAlreadyExistsException.class, SeatAlreadyHeldException.class, SeatNotHeldException.class})
     public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, errorCode(ex), ex.getMessage(), request);
     }

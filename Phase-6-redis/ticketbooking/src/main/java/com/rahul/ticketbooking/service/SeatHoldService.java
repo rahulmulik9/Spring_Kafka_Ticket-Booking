@@ -6,6 +6,7 @@ import com.rahul.ticketbooking.entity.SeatStatus;
 import com.rahul.ticketbooking.exception.SeatAlreadyBookedException;
 import com.rahul.ticketbooking.exception.SeatAlreadyHeldException;
 import com.rahul.ticketbooking.exception.SeatNotFoundException;
+import com.rahul.ticketbooking.exception.SeatNotHeldException;
 import com.rahul.ticketbooking.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -99,5 +100,21 @@ public class SeatHoldService {
             }
         }
         log.info("User {} released seats {}", userId, seatIds);
+    }
+
+    // Used by booking. Throws if any seat is not held by this user right now.
+    public void assertHeldByUser(List<Long> seatIds, Long userId) {
+        String owner = String.valueOf(userId);
+
+        for (Long seatId : seatIds.stream().distinct().toList()) {
+            String holder = redisTemplate.opsForValue().get(KEY_PREFIX + seatId);
+
+            if (holder == null) {
+                throw new SeatNotHeldException("Seat " + seatId + " is not held. Hold it first, or your hold has expired");
+            }
+            if (!owner.equals(holder)) {
+                throw new SeatNotHeldException("Seat " + seatId + " is held by another user");
+            }
+        }
     }
 }
