@@ -26,6 +26,7 @@ public class BookingFacade {
     private final BookingService bookingService;
     private final AuditService auditService;
     private final SeatHoldService seatHoldService;
+    private final SeatLockService seatLockService;
 
     // BiFunction only takes two arguments, and we now pass three, so a tiny interface replaces it.
     private interface BookingCall {
@@ -38,6 +39,14 @@ public class BookingFacade {
 
     public Booking createBookingOptimistic(Long showId, BookingRequest request, AuthUser user) {
         return attempt(showId, request, user, bookingService::createBookingOptimistic);
+    }
+
+    // Step 7: comparison only. Takes a Redis lock on the seats, then books without the DB row lock.
+    public Booking createBookingRedisLock(Long showId, BookingRequest request, AuthUser user) {
+        return attempt(showId, request, user,
+                (sId, req, userId) -> seatLockService.executeWithLocks(
+                        req.getSeatIds(),
+                        () -> bookingService.createBookingOptimistic(sId, req, userId)));
     }
 
     private Booking attempt(Long showId, BookingRequest request, AuthUser user, BookingCall bookingCall) {

@@ -43,4 +43,12 @@ public class BookingController {
         Booking booking = bookingService.cancelBooking(id, user);
         return ResponseEntity.ok(BookingMapper.toResponse(booking));
     }
+
+    @PostMapping("/{showId}/redis-lock")
+    public ResponseEntity<BookingResponse> createBookingRedisLock(@PathVariable Long showId,
+                                                                  @Valid @RequestBody BookingRequest request,
+                                                                  @AuthenticationPrincipal AuthUser user) {
+        Booking booking = bookingFacade.createBookingRedisLock(showId, request, user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(BookingMapper.toResponse(booking));
+    }
 }

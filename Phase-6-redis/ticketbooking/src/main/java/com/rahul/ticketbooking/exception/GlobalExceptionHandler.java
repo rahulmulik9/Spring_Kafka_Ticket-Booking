@@ -93,5 +93,9 @@ public class GlobalExceptionHandler {
     }
 
 
-
+    @ExceptionHandler(SeatBusyException.class)
+    public ResponseEntity<ErrorResponse> handleSeatBusy(SeatBusyException ex, HttpServletRequest request) {
+        log.warn("Seat busy at {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, "SEAT_BUSY", ex.getMessage(), request);
+    }
 }
