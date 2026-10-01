@@ -1,3 +1,18 @@
+server:
+  port: 8761
+
 spring:
   application:
     name: eureka-server
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    register-with-eureka: false   # this is the directory itself, it should not list itself
+    fetch-registry: false         # and it has no other directory to copy from
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  server:
+    enable-self-preservation: false          # dev only, see the note below
+    eviction-interval-timer-in-ms: 5000      # dev only, check for dead services every 5 seconds
