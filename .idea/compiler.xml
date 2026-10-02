@@ -10,7 +10,7 @@
         <module name="config-server" />
         <module name="eureka-server" />
       </profile>
-      <profile name="Annotation profile for cinema-service" enabled="true">
+      <profile name="Annotation profile for payment-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -18,8 +18,8 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
         </processorPath>
         <module name="api-gateway" />
-        <module name="user-service" />
         <module name="payment-service" />
+        <module name="user-service" />
         <module name="notification-service" />
         <module name="cinema-service" />
         <module name="booking-service" />
