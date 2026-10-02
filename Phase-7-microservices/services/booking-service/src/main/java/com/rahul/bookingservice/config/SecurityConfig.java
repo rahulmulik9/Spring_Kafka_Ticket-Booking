@@ -35,27 +35,18 @@ public class SecurityConfig {
                         .accessDeniedHandler(jwtAccessDeniedHandler))
 
                 .authorizeHttpRequests(auth -> auth
-
                         // 1. Public: health check
                         .requestMatchers("/actuator/health").permitAll()
-
                         // 2. Other actuator endpoints: admin only
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
-
                         // 3. Internal service calls: authenticated
                         .requestMatchers("/internal/**").authenticated()
-
                         // 4. All booking APIs: authenticated users
-                        .requestMatchers(HttpMethod.POST, "/api/bookings/**")
-                        .authenticated()
-
-                        .requestMatchers(HttpMethod.GET, "/api/bookings/**")
-                        .authenticated()
-
+                        .requestMatchers(HttpMethod.POST, "/api/bookings/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/**").authenticated()
                         // 5. Everything else: authenticated
                         .anyRequest().authenticated()
                 )
-
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
