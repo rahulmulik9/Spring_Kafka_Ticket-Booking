@@ -57,4 +57,16 @@ public class PaymentService {
     public List<Payment> getPaymentsByBooking(Long bookingId) {
         return paymentRepository.findByBookingIdOrderByIdDesc(bookingId);
     }
+
+    // A customer sees only their own payments. An admin sees all of them.
+    @Transactional(readOnly = true)
+    public List<Payment> getPaymentsForCaller(Long bookingId, Long callerId, boolean isAdmin) {
+        List<Payment> payments = paymentRepository.findByBookingIdOrderByIdDesc(bookingId);
+        if (isAdmin) {
+            return payments;
+        }
+        return payments.stream()
+                .filter(p -> p.getUserId().equals(callerId))
+                .toList();
+    }
 }

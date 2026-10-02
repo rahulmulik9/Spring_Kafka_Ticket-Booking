@@ -70,4 +70,13 @@ class PaymentServiceTest {
         assertEquals(PaymentStatus.SUCCESS, payments.get(0).getStatus());   // newest first
         assertEquals(PaymentStatus.FAILED, payments.get(1).getStatus());
     }
+
+    @Test
+    void callerSeesOnlyOwnPaymentsAndAdminSeesAll() {
+        paymentService.pay(BOOKING_ID, USER_ID, new BigDecimal("250.00"));
+
+        assertEquals(1, paymentService.getPaymentsForCaller(BOOKING_ID, USER_ID, false).size());
+        assertEquals(0, paymentService.getPaymentsForCaller(BOOKING_ID, 99L, false).size());
+        assertEquals(1, paymentService.getPaymentsForCaller(BOOKING_ID, 99L, true).size());
+    }
 }
