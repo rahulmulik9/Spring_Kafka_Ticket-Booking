@@ -10,7 +10,7 @@
         <module name="config-server" />
         <module name="eureka-server" />
       </profile>
-      <profile name="Annotation profile for notification-service" enabled="true">
+      <profile name="Annotation profile for booking-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -21,8 +21,8 @@
         <module name="payment-service" />
         <module name="user-service" />
         <module name="notification-service" />
-        <module name="cinema-service" />
         <module name="booking-service" />
+        <module name="cinema-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
