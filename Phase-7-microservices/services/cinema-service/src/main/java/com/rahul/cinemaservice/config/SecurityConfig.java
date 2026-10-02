@@ -40,7 +40,9 @@ public class SecurityConfig {
                         .hasAnyRole("ORGANIZER", "ADMIN")
                         // 4. Other actuator endpoints: admin only
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
-                        // 5. Everything else: any logged-in user
+                        // 5. Internal calls from other services: a valid token is required
+                        .requestMatchers("/internal/**").authenticated()
+                        // 6. Everything else: any logged-in user
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
