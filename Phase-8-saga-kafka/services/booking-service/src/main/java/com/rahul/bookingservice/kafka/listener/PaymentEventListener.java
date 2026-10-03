@@ -1,10 +1,10 @@
-package com.rahul.bookingservice.Kafka.listener;
+package com.rahul.bookingservice.kafka.listener;
 
 import com.rahul.bookingservice.entity.Booking;
 import com.rahul.bookingservice.entity.BookingStatus;
-import com.rahul.bookingservice.Kafka.event.BookingConfirmedEvent;
-import com.rahul.bookingservice.Kafka.publisher.BookingEventPublisher;
-import com.rahul.bookingservice.Kafka.event.PaymentCompletedEvent;
+import com.rahul.bookingservice.kafka.event.BookingConfirmedEvent;
+import com.rahul.bookingservice.kafka.publisher.BookingEventPublisher;
+import com.rahul.bookingservice.kafka.event.PaymentCompletedEvent;
 import com.rahul.bookingservice.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,8 @@ public class PaymentEventListener {
     private final BookingService bookingService;
     private final BookingEventPublisher eventPublisher;
 
-    @KafkaListener(topics = "payment-completed", properties = "spring.json.value.default.type=com.rahul.bookingservice.Kafka.event.PaymentCompletedEvent")
+    @KafkaListener(topics = "payment-completed", groupId = "booking-service",
+            properties = "spring.json.value.default.type=com.rahul.bookingservice.kafka.event.PaymentCompletedEvent")
     public void onPaymentCompleted(@Payload PaymentCompletedEvent event) {
         log.info("Received {}", event);
 

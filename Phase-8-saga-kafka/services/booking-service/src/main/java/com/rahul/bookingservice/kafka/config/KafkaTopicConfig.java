@@ -1,4 +1,4 @@
-package com.rahul.bookingservice.Kafka.config;
+package com.rahul.bookingservice.kafka.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;

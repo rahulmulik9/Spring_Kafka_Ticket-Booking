@@ -1,4 +1,4 @@
-package com.rahul.bookingservice.Kafka.event;
+package com.rahul.bookingservice.kafka.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -6,18 +6,18 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.List;
+import java.math.BigDecimal;
 
+// Booking's own copy of the message that Payment publishes. The JSON is the contract.
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class BookingCreatedEvent {
+public class PaymentCompletedEvent {
 
     private String eventId;
     private Long bookingId;
-    private Long userId;
-    private Long showId;
-    private List<Long> seatIds;   // Cinema needs to know which seats to reserve
+    private Long paymentId;
+    private BigDecimal amount;
 }

@@ -1,4 +1,4 @@
-package com.rahul.bookingservice.Kafka.event;
+package com.rahul.bookingservice.kafka.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

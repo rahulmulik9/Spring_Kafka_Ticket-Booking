@@ -1,6 +1,6 @@
-package com.rahul.bookingservice.Kafka.listener;
+package com.rahul.bookingservice.kafka.listener;
 
-import com.rahul.bookingservice.Kafka.event.SeatsReservedEvent;
+import com.rahul.bookingservice.kafka.event.SeatsReservedEvent;
 import com.rahul.bookingservice.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +15,8 @@ public class SeatsReservedListener {
 
     private final BookingService bookingService;
 
-    @KafkaListener(topics = "seats-reserved", properties = "spring.json.value.default.type=com.rahul.bookingservice.Kafka.event.SeatsReservedEvent")
+    @KafkaListener(topics = "seats-reserved", groupId = "booking-service",
+            properties = "spring.json.value.default.type=com.rahul.bookingservice.kafka.event.SeatsReservedEvent")
     public void onSeatsReserved(@Payload SeatsReservedEvent event) {
         log.info("Received {}", event);
         bookingService.addReservationDetails(event);

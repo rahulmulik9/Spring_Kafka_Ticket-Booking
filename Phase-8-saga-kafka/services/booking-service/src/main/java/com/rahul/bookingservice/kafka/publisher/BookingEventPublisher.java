@@ -1,8 +1,8 @@
-package com.rahul.bookingservice.Kafka.publisher;
+package com.rahul.bookingservice.kafka.publisher;
 
-import com.rahul.bookingservice.Kafka.config.KafkaTopicConfig;
-import com.rahul.bookingservice.Kafka.event.BookingConfirmedEvent;
-import com.rahul.bookingservice.Kafka.event.BookingCreatedEvent;
+import com.rahul.bookingservice.kafka.config.KafkaTopicConfig;
+import com.rahul.bookingservice.kafka.event.BookingConfirmedEvent;
+import com.rahul.bookingservice.kafka.event.BookingCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
