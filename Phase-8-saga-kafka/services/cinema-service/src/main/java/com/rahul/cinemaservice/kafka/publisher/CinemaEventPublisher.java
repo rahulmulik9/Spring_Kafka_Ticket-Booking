@@ -1,7 +1,7 @@
-package com.rahul.cinemaservice.Kafka.publisher;
+package com.rahul.cinemaservice.kafka.publisher;
 
-import com.rahul.cinemaservice.Kafka.config.KafkaTopicConfig;
-import com.rahul.cinemaservice.Kafka.event.SeatsReservedEvent;
+import com.rahul.cinemaservice.kafka.config.KafkaTopicConfig;
+import com.rahul.cinemaservice.kafka.event.SeatsReservedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;

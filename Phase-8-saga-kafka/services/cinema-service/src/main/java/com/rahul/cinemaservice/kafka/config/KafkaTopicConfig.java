@@ -1,4 +1,4 @@
-package com.rahul.cinemaservice.Kafka.config;
+package com.rahul.cinemaservice.kafka.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;

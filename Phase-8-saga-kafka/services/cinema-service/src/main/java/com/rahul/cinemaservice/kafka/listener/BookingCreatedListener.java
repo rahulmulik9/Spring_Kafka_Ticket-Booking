@@ -1,11 +1,11 @@
-package com.rahul.cinemaservice.Kafka.listener;
+package com.rahul.cinemaservice.kafka.listener;
 
 import com.rahul.cinemaservice.dto.ReservedSeat;
 import com.rahul.cinemaservice.dto.SeatReservationResponse;
-import com.rahul.cinemaservice.Kafka.event.BookingCreatedEvent;
-import com.rahul.cinemaservice.Kafka.publisher.CinemaEventPublisher;
-import com.rahul.cinemaservice.Kafka.event.SeatDetail;
-import com.rahul.cinemaservice.Kafka.event.SeatsReservedEvent;
+import com.rahul.cinemaservice.kafka.event.BookingCreatedEvent;
+import com.rahul.cinemaservice.kafka.publisher.CinemaEventPublisher;
+import com.rahul.cinemaservice.kafka.event.SeatDetail;
+import com.rahul.cinemaservice.kafka.event.SeatsReservedEvent;
 import com.rahul.cinemaservice.service.SeatReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

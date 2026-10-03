@@ -1,4 +1,4 @@
-package com.rahul.cinemaservice.Kafka.event;
+package com.rahul.cinemaservice.kafka.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
