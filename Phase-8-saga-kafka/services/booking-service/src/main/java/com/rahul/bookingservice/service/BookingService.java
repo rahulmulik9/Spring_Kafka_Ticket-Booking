@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 // Only database work lives here. Every method is one short transaction.
 // Calls to other services happen in BookingFacade, outside any transaction.
@@ -70,5 +71,10 @@ public class BookingService {
             throw new AccessDeniedException("You can only access your own bookings");
         }
         return booking;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Booking> getBookingsForUser(AuthUser caller) {
+        return bookingRepository.findAllByUserIdWithSeats(caller.getId());
     }
 }

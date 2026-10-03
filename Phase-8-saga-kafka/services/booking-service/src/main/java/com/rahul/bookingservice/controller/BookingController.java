@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
@@ -35,6 +37,18 @@ public class BookingController {
                                                       @AuthenticationPrincipal AuthUser user) {
         Booking booking = bookingService.getBookingForUser(id, user);
         return ResponseEntity.ok(BookingMapper.toResponse(booking));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<BookingResponse>> getBookings(@AuthenticationPrincipal AuthUser user) {
+
+        List<Booking> bookings = bookingService.getBookingsForUser(user);
+
+        return ResponseEntity.ok(
+                bookings.stream()
+                        .map(BookingMapper::toResponse)
+                        .toList()
+        );
     }
 
     @PostMapping("/{id}/cancel")

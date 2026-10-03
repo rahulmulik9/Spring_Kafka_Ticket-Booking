@@ -15,5 +15,13 @@
     <file url="file://$PROJECT_DIR$/Phase-7-microservices/services/notification-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Phase-7-microservices/services/payment-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/Phase-7-microservices/services/user-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Phase-8-saga-kafka/services/api-gateway/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Phase-8-saga-kafka/services/booking-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Phase-8-saga-kafka/services/cinema-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Phase-8-saga-kafka/services/config-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Phase-8-saga-kafka/services/eureka-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Phase-8-saga-kafka/services/notification-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Phase-8-saga-kafka/services/payment-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Phase-8-saga-kafka/services/user-service/src/main/java" charset="UTF-8" />
   </component>
 </project>
