@@ -115,8 +115,8 @@ public class BookingFacade {
                     "Only confirmed bookings can be cancelled. This booking is " + booking.getStatus());
         }
 
-        // Release first, then mark cancelled. Release is safe to repeat, so if saving the
-        // status fails, the customer can simply press cancel again.
+        // Release first, then mark cancelled.
+        // Release is safe to repeat,so if saving the status fails, the customer can simply press cancel again.
         cinemaClient.releaseSeats(booking.getShowId(), new SeatIdsRequest(seatIdsOf(booking)));
         Booking cancelled = bookingService.updateStatus(bookingId, BookingStatus.CANCELLED);
 
