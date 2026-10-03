@@ -53,26 +53,6 @@ public class BookingFacade {
         }
     }
 
-    public Booking cancelBooking(Long bookingId, AuthUser user) {
-        Booking booking = bookingService.getBookingForUser(bookingId, user);   // 404 or 403 here
-
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new BookingAlreadyCancelledException("Booking " + bookingId + " is already cancelled");
-        }
-        if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new InvalidBookingStateException(
-                    "Only confirmed bookings can be cancelled. This booking is " + booking.getStatus());
-        }
-
-        // Release first, then mark cancelled. Release is safe to repeat, so if saving the
-        // status fails, the customer can simply press cancel again.
-        cinemaClient.releaseSeats(booking.getShowId(), new SeatIdsRequest(seatIdsOf(booking)));
-        Booking cancelled = bookingService.updateStatus(bookingId, BookingStatus.CANCELLED);
-
-        notifyQuietly(booking.getCustomerEmail(), "BOOKING_CANCELLED", bookingId);
-        return cancelled;
-    }
-
     private Booking doCreateBooking(Long showId, BookingRequest request, AuthUser user) {
         SeatIdsRequest seatIds = new SeatIdsRequest(request.getSeatIds());
 
@@ -122,6 +102,26 @@ public class BookingFacade {
             log.error("Could not release seats {} of show {}. They stay BOOKED until fixed by hand. Reason: {}",
                     seatIds.getSeatIds(), showId, ex.getMessage());
         }
+    }
+
+    public Booking cancelBooking(Long bookingId, AuthUser user) {
+        Booking booking = bookingService.getBookingForUser(bookingId, user);   // 404 or 403 here
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new BookingAlreadyCancelledException("Booking " + bookingId + " is already cancelled");
+        }
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new InvalidBookingStateException(
+                    "Only confirmed bookings can be cancelled. This booking is " + booking.getStatus());
+        }
+
+        // Release first, then mark cancelled. Release is safe to repeat, so if saving the
+        // status fails, the customer can simply press cancel again.
+        cinemaClient.releaseSeats(booking.getShowId(), new SeatIdsRequest(seatIdsOf(booking)));
+        Booking cancelled = bookingService.updateStatus(bookingId, BookingStatus.CANCELLED);
+
+        notifyQuietly(booking.getCustomerEmail(), "BOOKING_CANCELLED", bookingId);
+        return cancelled;
     }
 
     // A message that fails to send must never undo a booking.

@@ -52,6 +52,9 @@ public class BookingService {
         Booking booking = bookingRepository.findByIdWithSeats(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + bookingId));
         booking.setStatus(status);
+        // No save() needed: the booking is a managed entity, so Hibernate notices the change with snapshot (store while loading from database)
+        // (dirty checking) and runs the UPDATE when this transaction commits.
+        //all has been done because  @Transactional annotation.
         return booking;
     }
 
