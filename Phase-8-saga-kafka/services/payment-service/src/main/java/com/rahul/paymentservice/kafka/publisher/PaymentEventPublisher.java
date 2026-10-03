@@ -1,7 +1,7 @@
-package com.rahul.paymentservice.Kafka.publisher;
+package com.rahul.paymentservice.kafka.publisher;
 
-import com.rahul.paymentservice.Kafka.config.KafkaTopicConfig;
-import com.rahul.paymentservice.Kafka.event.PaymentCompletedEvent;
+import com.rahul.paymentservice.kafka.config.KafkaTopicConfig;
+import com.rahul.paymentservice.kafka.event.PaymentCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;

@@ -1,4 +1,4 @@
-package com.rahul.paymentservice.Kafka.config;
+package com.rahul.paymentservice.kafka.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;

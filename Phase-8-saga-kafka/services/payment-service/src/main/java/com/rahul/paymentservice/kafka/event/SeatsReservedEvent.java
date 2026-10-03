@@ -1,4 +1,4 @@
-package com.rahul.paymentservice.Kafka.event;
+package com.rahul.paymentservice.kafka.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,15 +8,16 @@ import lombok.ToString;
 
 import java.math.BigDecimal;
 
+// Payment only needs the booking, the user and the money. It ignores the movie and seat fields in the message.
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class PaymentCompletedEvent {
+public class SeatsReservedEvent {
 
     private String eventId;
     private Long bookingId;
-    private Long paymentId;
-    private BigDecimal amount;
+    private Long userId;
+    private BigDecimal totalAmount;
 }

@@ -1,9 +1,9 @@
-package com.rahul.paymentservice.Kafka.listener;
+package com.rahul.paymentservice.kafka.listener;
 
 import com.rahul.paymentservice.entity.Payment;
-import com.rahul.paymentservice.Kafka.event.PaymentCompletedEvent;
-import com.rahul.paymentservice.Kafka.publisher.PaymentEventPublisher;
-import com.rahul.paymentservice.Kafka.event.SeatsReservedEvent;
+import com.rahul.paymentservice.kafka.event.PaymentCompletedEvent;
+import com.rahul.paymentservice.kafka.publisher.PaymentEventPublisher;
+import com.rahul.paymentservice.kafka.event.SeatsReservedEvent;
 import com.rahul.paymentservice.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ public class BookingEventListener {
     private final PaymentService paymentService;
     private final PaymentEventPublisher eventPublisher;
 
-    @KafkaListener(topics = "seats-reserved")
+    @KafkaListener(topics = "seats-reserved", groupId = "payment-service")
     public void onSeatsReserved(@Payload SeatsReservedEvent event) {
         log.info("Received {}", event);
 
