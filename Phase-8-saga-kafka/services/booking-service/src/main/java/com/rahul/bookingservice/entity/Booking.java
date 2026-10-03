@@ -3,6 +3,7 @@ package com.rahul.bookingservice.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "bookings")
+@DynamicUpdate
 @Getter
 @Setter
 public class Booking {
