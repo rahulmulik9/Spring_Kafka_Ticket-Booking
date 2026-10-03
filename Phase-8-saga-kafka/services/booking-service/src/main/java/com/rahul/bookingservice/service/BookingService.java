@@ -1,10 +1,10 @@
 package com.rahul.bookingservice.service;
 
-import com.rahul.bookingservice.client.dto.ReservedSeat;
-import com.rahul.bookingservice.client.dto.SeatReservationResponse;
 import com.rahul.bookingservice.entity.Booking;
 import com.rahul.bookingservice.entity.BookingSeat;
 import com.rahul.bookingservice.entity.BookingStatus;
+import com.rahul.bookingservice.event.SeatDetail;
+import com.rahul.bookingservice.event.SeatsReservedEvent;
 import com.rahul.bookingservice.exception.BookingNotFoundException;
 import com.rahul.bookingservice.repository.BookingRepository;
 import com.rahul.bookingservice.security.AuthUser;
@@ -13,39 +13,44 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 // Only database work lives here. Every method is one short transaction.
-// Calls to other services happen in BookingFacade, outside any transaction.
 @Service
 @RequiredArgsConstructor
 public class BookingService {
 
     private final BookingRepository bookingRepository;
 
+    // A bare booking: we do not know the movie, seats or price yet. Cinema tells us later.
     @Transactional
-    public Booking createPendingBooking(Long showId, AuthUser user, SeatReservationResponse reservation) {
+    public Booking createPendingBooking(Long showId, AuthUser user) {
         Booking booking = new Booking();
         booking.setUserId(user.getId());
         booking.setShowId(showId);
-        booking.setMovieName(reservation.getMovieName());
-        booking.setShowTime(reservation.getShowTime());
         booking.setCustomerEmail(user.getEmail());
         booking.setStatus(BookingStatus.PENDING);
-
-        BigDecimal total = BigDecimal.ZERO;
-        for (ReservedSeat reserved : reservation.getSeats()) {
-            BookingSeat seat = new BookingSeat();
-            seat.setSeatId(reserved.getSeatId());
-            seat.setSeatNumber(reserved.getSeatNumber());
-            seat.setPrice(reserved.getPrice());
-            booking.addSeat(seat);
-            total = total.add(reserved.getPrice());
-        }
-        booking.setTotalAmount(total);
-
         return bookingRepository.save(booking);
+    }
+
+    // Called when Cinema says the seats are reserved: copy the details into the booking.
+    @Transactional
+    public void addReservationDetails(SeatsReservedEvent event) {
+        Booking booking = bookingRepository.findByIdWithSeats(event.getBookingId())
+                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + event.getBookingId()));
+
+        booking.setMovieName(event.getMovieName());
+        booking.setShowTime(event.getShowTime());
+        booking.setTotalAmount(event.getTotalAmount());
+
+        for (SeatDetail detail : event.getSeats()) {
+            BookingSeat seat = new BookingSeat();
+            seat.setSeatId(detail.getSeatId());
+            seat.setSeatNumber(detail.getSeatNumber());
+            seat.setPrice(detail.getPrice());
+            booking.addSeat(seat);
+        }
+        // No save() needed: the booking is managed, so dirty checking writes the changes at commit.
     }
 
     @Transactional
@@ -53,9 +58,6 @@ public class BookingService {
         Booking booking = bookingRepository.findByIdWithSeats(bookingId)
                 .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + bookingId));
         booking.setStatus(status);
-        // No save() needed: the booking is a managed entity, so Hibernate notices the change with snapshot (store while loading from database)
-        // (dirty checking) and runs the UPDATE when this transaction commits.
-        //all has been done because  @Transactional annotation.
         return booking;
     }
 
