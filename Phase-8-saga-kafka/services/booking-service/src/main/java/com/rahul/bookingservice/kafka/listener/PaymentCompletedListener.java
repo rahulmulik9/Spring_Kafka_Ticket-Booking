@@ -1,6 +1,6 @@
 package com.rahul.bookingservice.kafka.listener;
 
-import com.rahul.bookingservice.kafka.event.PaymentFailedEvent;
+import com.rahul.bookingservice.kafka.event.PaymentCompletedEvent;
 import com.rahul.bookingservice.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,14 +11,14 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class PaymentFailedListener {
+public class PaymentCompletedListener {
 
     private final BookingService bookingService;
 
-    @KafkaListener(topics = "payment-failed",
-            properties = "spring.json.value.default.type=com.rahul.bookingservice.kafka.event.PaymentFailedEvent")
-    public void onPaymentFailed(@Payload PaymentFailedEvent event) {
+    @KafkaListener(topics = "payment-completed",
+            properties = "spring.json.value.default.type=com.rahul.bookingservice.kafka.event.PaymentCompletedEvent")
+    public void onPaymentCompleted(@Payload PaymentCompletedEvent event) {
         log.info("Received {}", event);
-        bookingService.markPaymentFailed(event);
+        bookingService.markConfirmed(event.getBookingId());
     }
 }
