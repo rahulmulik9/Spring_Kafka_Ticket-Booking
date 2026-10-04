@@ -1,0 +1,26 @@
+package com.rahul.bookingservice.kafka.listener;
+
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.stereotype.Component;
+
+// The "review pile": logs every message that Booking gave up on.
+@Slf4j
+@Component
+public class DeadLetterListener {
+
+    // The DLT value is JSON text, so this listener reads it as a plain String.
+    @KafkaListener(
+            topics = {"seats-reserved.DLT", "seats-reservation-failed.DLT",
+                    "payment-completed.DLT", "payment-failed.DLT"},
+            properties = "value.deserializer=org.apache.kafka.common.serialization.StringDeserializer")
+    public void onDeadLetter(ConsumerRecord<String, String> record,
+                             @Header(name = KafkaHeaders.DLT_ORIGINAL_TOPIC, required = false) String originalTopic,
+                             @Header(name = KafkaHeaders.DLT_EXCEPTION_MESSAGE, required = false) String reason) {
+        log.error("DEAD LETTER from {} key={} reason={} payload={}",
+                originalTopic, record.key(), reason, record.value());
+    }
+}
