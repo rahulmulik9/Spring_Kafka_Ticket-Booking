@@ -7,12 +7,14 @@ import com.rahul.bookingservice.exception.BookingNotFoundException;
 import com.rahul.bookingservice.idempotency.IdempotencyKey;
 import com.rahul.bookingservice.idempotency.IdempotencyKeyRepository;
 import com.rahul.bookingservice.idempotency.IdempotencyKeyReuseException;
+import com.rahul.bookingservice.idempotency.ProcessedEventService;
 import com.rahul.bookingservice.kafka.config.KafkaTopicConfig;
 import com.rahul.bookingservice.kafka.event.BookingCancelledEvent;
 import com.rahul.bookingservice.kafka.event.BookingConfirmedEvent;
 import com.rahul.bookingservice.kafka.event.BookingCreatedEvent;
 import com.rahul.bookingservice.kafka.event.BookingFailedEvent;
 import com.rahul.bookingservice.kafka.event.PaymentFailedEvent;
+import com.rahul.bookingservice.kafka.event.PaymentCompletedEvent;
 import com.rahul.bookingservice.kafka.event.SeatDetail;
 import com.rahul.bookingservice.kafka.event.SeatsReservationFailedEvent;
 import com.rahul.bookingservice.kafka.event.SeatsReservedEvent;
@@ -20,6 +22,7 @@ import com.rahul.bookingservice.outbox.OutboxService;
 import com.rahul.bookingservice.repository.BookingRepository;
 import com.rahul.bookingservice.security.AuthUser;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,7 @@ import java.util.UUID;
 
 // Only database work lives here. Every method is one short transaction.
 // Each status change saves its event to the outbox in the SAME transaction.
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingService {
@@ -38,6 +42,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final OutboxService outboxService;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
+    private final ProcessedEventService processedEventService;
 
     // The booking, the idempotency key and the BookingCreated event are saved in ONE transaction.
     // A duplicate key fails on the unique constraint, and everything rolls back.
@@ -80,6 +85,10 @@ public class BookingService {
     // Cinema reserved the seats: copy the details into the booking. No event is needed.
     @Transactional
     public void addReservationDetails(SeatsReservedEvent event) {
+        if (!processedEventService.markIfNew(event.getEventId())) {
+            log.info("Skipping duplicate event {} (seats-reserved)", event.getEventId());
+            return;
+        }
         Booking booking = findWithSeats(event.getBookingId());
 
         booking.setMovieName(event.getMovieName());
@@ -97,18 +106,26 @@ public class BookingService {
 
     // Payment succeeded.
     @Transactional
-    public void markConfirmed(Long bookingId) {
-        Booking booking = findWithSeats(bookingId);
+    public void markConfirmed(PaymentCompletedEvent event) {
+        if (!processedEventService.markIfNew(event.getEventId())) {
+            log.info("Skipping duplicate event {} (payment-completed)", event.getEventId());
+            return;
+        }
+        Booking booking = findWithSeats(event.getBookingId());
         booking.setStatus(BookingStatus.CONFIRMED);
 
         String eventId = UUID.randomUUID().toString();
-        outboxService.save(KafkaTopicConfig.BOOKING_CONFIRMED_TOPIC, bookingId, eventId,
-                new BookingConfirmedEvent(eventId, bookingId, booking.getCustomerEmail()));
+        outboxService.save(KafkaTopicConfig.BOOKING_CONFIRMED_TOPIC, booking.getId(), eventId,
+                new BookingConfirmedEvent(eventId, booking.getId(), booking.getCustomerEmail()));
     }
 
     // Payment was declined: tell Cinema (release seats) and Notification.
     @Transactional
     public void markPaymentFailed(PaymentFailedEvent event) {
+        if (!processedEventService.markIfNew(event.getEventId())) {
+            log.info("Skipping duplicate event {} (payment-failed)", event.getEventId());
+            return;
+        }
         Booking booking = findWithSeats(event.getBookingId());
         booking.setStatus(BookingStatus.PAYMENT_FAILED);
 
@@ -118,9 +135,13 @@ public class BookingService {
                         booking.getCustomerEmail(), event.getReason()));
     }
 
-    // A seat was taken: keep what the customer tried to book. Nothing was reserved, so no seats to release.
+    // A seat was taken: keep what the customer tried to book.
     @Transactional
     public void markSeatsUnavailable(SeatsReservationFailedEvent event) {
+        if (!processedEventService.markIfNew(event.getEventId())) {
+            log.info("Skipping duplicate event {} (seats-reservation-failed)", event.getEventId());
+            return;
+        }
         Booking booking = findWithSeats(event.getBookingId());
 
         booking.setStatus(BookingStatus.SEATS_UNAVAILABLE);
@@ -145,7 +166,6 @@ public class BookingService {
                 new BookingFailedEvent(eventId, booking.getId(), booking.getShowId(), List.of(),
                         booking.getCustomerEmail(), event.getReason()));
     }
-
     // The customer cancelled a confirmed booking.
     @Transactional
     public Booking markCancelled(Long bookingId) {

@@ -19,6 +19,6 @@ public class PaymentCompletedListener {
             properties = "spring.json.value.default.type=com.rahul.bookingservice.kafka.event.PaymentCompletedEvent")
     public void onPaymentCompleted(@Payload PaymentCompletedEvent event) {
         log.info("Received {}", event);
-        bookingService.markConfirmed(event.getBookingId());
+        bookingService.markConfirmed(event);
     }
 }
