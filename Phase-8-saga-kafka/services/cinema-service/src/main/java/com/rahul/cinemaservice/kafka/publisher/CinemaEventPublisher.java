@@ -1,6 +1,7 @@
 package com.rahul.cinemaservice.kafka.publisher;
 
 import com.rahul.cinemaservice.kafka.config.KafkaTopicConfig;
+import com.rahul.cinemaservice.kafka.event.SeatsReservationFailedEvent;
 import com.rahul.cinemaservice.kafka.event.SeatsReservedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,14 +16,20 @@ public class CinemaEventPublisher {
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public void publishSeatsReserved(SeatsReservedEvent event) {
-        String key = String.valueOf(event.getBookingId());
+        send(KafkaTopicConfig.SEATS_RESERVED_TOPIC, event.getBookingId(), event.getEventId(), event);
+    }
 
-        kafkaTemplate.send(KafkaTopicConfig.SEATS_RESERVED_TOPIC, key, event)
+    public void publishSeatsReservationFailed(SeatsReservationFailedEvent event) {
+        send(KafkaTopicConfig.SEATS_RESERVATION_FAILED_TOPIC, event.getBookingId(), event.getEventId(), event);
+    }
+
+    private void send(String topic, Long bookingId, String eventId, Object event) {
+        kafkaTemplate.send(topic, String.valueOf(bookingId), event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
-                        log.error("Failed to send event {}", event.getEventId(), ex);
+                        log.error("Failed to send event {} to {}", eventId, topic, ex);
                     } else {
-                        log.info("Sent event {} to partition {} offset {}", event.getEventId(),
+                        log.info("Sent event {} to {} partition {} offset {}", eventId, topic,
                                 result.getRecordMetadata().partition(),
                                 result.getRecordMetadata().offset());
                     }
