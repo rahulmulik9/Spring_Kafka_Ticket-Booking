@@ -1,9 +1,10 @@
-package com.rahul.bookingservice.client.dto;
+package com.rahul.bookingservice.kafka.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -11,7 +12,12 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SeatIdsRequest {
+@ToString
+public class PaymentFailedEvent {
 
+    private String eventId;
+    private Long bookingId;
+    private Long showId;
     private List<Long> seatIds;
+    private String reason;
 }
