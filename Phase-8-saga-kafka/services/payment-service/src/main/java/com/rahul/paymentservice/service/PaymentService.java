@@ -3,6 +3,12 @@ package com.rahul.paymentservice.service;
 import com.rahul.paymentservice.entity.Payment;
 import com.rahul.paymentservice.entity.PaymentStatus;
 import com.rahul.paymentservice.exception.PaymentAlreadyDoneException;
+import com.rahul.paymentservice.kafka.config.KafkaTopicConfig;
+import com.rahul.paymentservice.kafka.event.PaymentCompletedEvent;
+import com.rahul.paymentservice.kafka.event.PaymentFailedEvent;
+import com.rahul.paymentservice.kafka.event.SeatDetail;
+import com.rahul.paymentservice.kafka.event.SeatsReservedEvent;
+import com.rahul.paymentservice.outbox.OutboxService;
 import com.rahul.paymentservice.repository.PaymentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,18 +17,41 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final OutboxService outboxService;
     private final BigDecimal maxAmount;
 
     public PaymentService(PaymentRepository paymentRepository,
+                          OutboxService outboxService,
                           @Value("${payment.max-amount}") BigDecimal maxAmount) {
         this.paymentRepository = paymentRepository;
+        this.outboxService = outboxService;
         this.maxAmount = maxAmount;
+    }
+
+    // Called by the Kafka listener. The payment row and its event are saved in ONE transaction.
+    // pay() below is called from inside this method, so it simply joins this transaction.
+    @Transactional
+    public void payForBooking(SeatsReservedEvent event) {
+        Payment payment = pay(event.getBookingId(), event.getUserId(), event.getTotalAmount());
+        String eventId = UUID.randomUUID().toString();
+
+        if (payment.getStatus() == PaymentStatus.SUCCESS) {
+            outboxService.save(KafkaTopicConfig.PAYMENT_COMPLETED_TOPIC, payment.getBookingId(), eventId,
+                    new PaymentCompletedEvent(eventId, payment.getBookingId(), payment.getId(), payment.getAmount()));
+            return;
+        }
+
+        List<Long> seatIds = event.getSeats().stream().map(SeatDetail::getSeatId).toList();
+        outboxService.save(KafkaTopicConfig.PAYMENT_FAILED_TOPIC, payment.getBookingId(), eventId,
+                new PaymentFailedEvent(eventId, payment.getBookingId(), event.getShowId(),
+                        seatIds, payment.getFailureReason()));
     }
 
     // A declined payment is a normal outcome, so it is RETURNED with status FAILED, not thrown.
@@ -47,7 +76,7 @@ public class PaymentService {
 
         Payment saved = paymentRepository.save(payment);
         log.info("Payment {} for booking {}: {}", saved.getId(), bookingId, saved.getStatus());
-        return saved;   // the caller checks the status
+        return saved;
     }
 
     @Transactional(readOnly = true)
