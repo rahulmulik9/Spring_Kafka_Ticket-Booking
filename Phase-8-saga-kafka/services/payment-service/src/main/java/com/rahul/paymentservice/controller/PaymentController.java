@@ -4,6 +4,7 @@ import com.rahul.paymentservice.dto.PaymentRequest;
 import com.rahul.paymentservice.dto.PaymentResponse;
 import com.rahul.paymentservice.entity.Payment;
 import com.rahul.paymentservice.security.AuthUser;
+import com.rahul.paymentservice.service.PaymentFacade;
 import com.rahul.paymentservice.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,15 +19,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PaymentController {
 
+    private final PaymentFacade paymentFacade;
     private final PaymentService paymentService;
 
     // Returns 201 for both outcomes. A declined payment is still a payment attempt that was recorded,
-    // and the "status" field tells the caller what happened.
+    // and the "status" field tells the caller what happened. A repeated key returns the same payment.
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PaymentResponse pay(@Valid @RequestBody PaymentRequest request,
+    public PaymentResponse pay(@RequestHeader("Idempotency-Key") String idempotencyKey,
+                               @Valid @RequestBody PaymentRequest request,
                                @AuthenticationPrincipal AuthUser caller) {
-        Payment payment = paymentService.pay(request.getBookingId(), caller.getId(), request.getAmount());
+        Payment payment = paymentFacade.pay(request.getBookingId(), caller.getId(), request.getAmount(), idempotencyKey);
         return PaymentResponse.from(payment);
     }
 
