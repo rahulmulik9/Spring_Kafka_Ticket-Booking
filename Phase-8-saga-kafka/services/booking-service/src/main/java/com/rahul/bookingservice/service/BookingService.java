@@ -4,6 +4,7 @@ import com.rahul.bookingservice.entity.Booking;
 import com.rahul.bookingservice.entity.BookingSeat;
 import com.rahul.bookingservice.entity.BookingStatus;
 import com.rahul.bookingservice.kafka.event.SeatDetail;
+import com.rahul.bookingservice.kafka.event.SeatsReservationFailedEvent;
 import com.rahul.bookingservice.kafka.event.SeatsReservedEvent;
 import com.rahul.bookingservice.exception.BookingNotFoundException;
 import com.rahul.bookingservice.repository.BookingRepository;
@@ -13,6 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 // Only database work lives here. Every method is one short transaction.
@@ -78,5 +80,30 @@ public class BookingService {
     @Transactional(readOnly = true)
     public List<Booking> getBookingsForUser(AuthUser caller) {
         return bookingRepository.findAllByUserIdWithSeats(caller.getId());
+    }
+
+    // Seats were refused: keep what the customer tried to book, so the failed booking is readable.
+    @Transactional
+    public Booking markSeatsUnavailable(SeatsReservationFailedEvent event) {
+        Booking booking = bookingRepository.findByIdWithSeats(event.getBookingId())
+                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + event.getBookingId()));
+
+        booking.setStatus(BookingStatus.SEATS_UNAVAILABLE);
+        booking.setMovieName(event.getMovieName());
+        booking.setShowTime(event.getShowTime());
+
+        BigDecimal total = BigDecimal.ZERO;
+        if (event.getSeats() != null) {
+            for (SeatDetail detail : event.getSeats()) {
+                BookingSeat seat = new BookingSeat();
+                seat.setSeatId(detail.getSeatId());
+                seat.setSeatNumber(detail.getSeatNumber());
+                seat.setPrice(detail.getPrice());
+                booking.addSeat(seat);
+                total = total.add(detail.getPrice());
+            }
+        }
+        booking.setTotalAmount(total);   // what the booking would have cost
+        return booking;
     }
 }

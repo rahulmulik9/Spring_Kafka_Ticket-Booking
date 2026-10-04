@@ -1,17 +1,14 @@
 package com.rahul.bookingservice.service;
 
-import com.rahul.bookingservice.client.CinemaClient;
-import com.rahul.bookingservice.client.NotificationClient;
-import com.rahul.bookingservice.client.dto.NotificationRequest;
-import com.rahul.bookingservice.client.dto.SeatIdsRequest;
 import com.rahul.bookingservice.dto.BookingRequest;
 import com.rahul.bookingservice.entity.Booking;
 import com.rahul.bookingservice.entity.BookingSeat;
 import com.rahul.bookingservice.entity.BookingStatus;
-import com.rahul.bookingservice.kafka.event.BookingCreatedEvent;
-import com.rahul.bookingservice.kafka.publisher.BookingEventPublisher;
 import com.rahul.bookingservice.exception.BookingAlreadyCancelledException;
 import com.rahul.bookingservice.exception.InvalidBookingStateException;
+import com.rahul.bookingservice.kafka.event.BookingCancelledEvent;
+import com.rahul.bookingservice.kafka.event.BookingCreatedEvent;
+import com.rahul.bookingservice.kafka.publisher.BookingEventPublisher;
 import com.rahul.bookingservice.security.AuthUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,14 +18,11 @@ import java.util.List;
 import java.util.UUID;
 
 /*
- * Step 3: the facade only saves a PENDING booking and publishes BookingCreated.
- * Cinema, Payment and the listeners in this service do the rest.
- *
  * Known gaps, fixed in the next steps:
- *  - Seat taken or payment declined: the booking stays PENDING (Step 4, saga).
  *  - Crash between saving and publishing loses the message (Steps 5 and 6, outbox).
  *  - The same request twice creates two bookings (Step 7, idempotency key).
- *  - Cancel still uses Feign calls (Step 4 turns it into an event).
+ *  - Duplicate messages are not detected yet (Step 8).
+ *  - Cancel does not refund, because no refund flow exists yet.
  */
 @Slf4j
 @Service
@@ -37,8 +31,6 @@ public class BookingFacade {
 
     private final BookingService bookingService;
     private final AuditService auditService;
-    private final CinemaClient cinemaClient;
-    private final NotificationClient notificationClient;
     private final BookingEventPublisher eventPublisher;
 
     public Booking createBooking(Long showId, BookingRequest request, AuthUser user) {
@@ -53,10 +45,8 @@ public class BookingFacade {
     }
 
     private Booking doCreateBooking(Long showId, BookingRequest request, AuthUser user) {
-        // 1. Save the booking as PENDING (its own short transaction, committed when this returns)
         Booking booking = bookingService.createPendingBooking(showId, user);
 
-        // 2. Tell the world. Cinema will pick it up and reserve the seats.
         eventPublisher.publishBookingCreated(new BookingCreatedEvent(
                 UUID.randomUUID().toString(),
                 booking.getId(),
@@ -78,19 +68,17 @@ public class BookingFacade {
                     "Only confirmed bookings can be cancelled. This booking is " + booking.getStatus());
         }
 
-        cinemaClient.releaseSeats(booking.getShowId(), new SeatIdsRequest(seatIdsOf(booking)));
         Booking cancelled = bookingService.updateStatus(bookingId, BookingStatus.CANCELLED);
 
-        notifyQuietly(booking.getCustomerEmail(), "BOOKING_CANCELLED", bookingId);
-        return cancelled;
-    }
+        // Cinema releases the seats and Notification tells the customer, both from this one event.
+        eventPublisher.publishBookingCancelled(new BookingCancelledEvent(
+                UUID.randomUUID().toString(),
+                bookingId,
+                booking.getShowId(),
+                seatIdsOf(booking),
+                booking.getCustomerEmail()));
 
-    private void notifyQuietly(String email, String type, Long bookingId) {
-        try {
-            notificationClient.send(new NotificationRequest(email, type, bookingId));
-        } catch (RuntimeException ex) {
-            log.warn("Notification {} for booking {} was not sent: {}", type, bookingId, ex.getMessage());
-        }
+        return cancelled;
     }
 
     private List<Long> seatIdsOf(Booking booking) {

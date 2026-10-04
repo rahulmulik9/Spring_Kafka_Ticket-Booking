@@ -46,11 +46,8 @@ public class PaymentService {
         }
 
         Payment saved = paymentRepository.save(payment);
-        if (saved.getStatus() == PaymentStatus.FAILED) {
-            throw new RuntimeException("declined");
-        }
         log.info("Payment {} for booking {}: {}", saved.getId(), bookingId, saved.getStatus());
-        return saved;
+        return saved;   // the caller checks the status
     }
 
     @Transactional(readOnly = true)
