@@ -3,10 +3,17 @@ package com.rahul.bookingservice.service;
 import com.rahul.bookingservice.entity.Booking;
 import com.rahul.bookingservice.entity.BookingSeat;
 import com.rahul.bookingservice.entity.BookingStatus;
+import com.rahul.bookingservice.exception.BookingNotFoundException;
+import com.rahul.bookingservice.kafka.config.KafkaTopicConfig;
+import com.rahul.bookingservice.kafka.event.BookingCancelledEvent;
+import com.rahul.bookingservice.kafka.event.BookingConfirmedEvent;
+import com.rahul.bookingservice.kafka.event.BookingCreatedEvent;
+import com.rahul.bookingservice.kafka.event.BookingFailedEvent;
+import com.rahul.bookingservice.kafka.event.PaymentFailedEvent;
 import com.rahul.bookingservice.kafka.event.SeatDetail;
 import com.rahul.bookingservice.kafka.event.SeatsReservationFailedEvent;
 import com.rahul.bookingservice.kafka.event.SeatsReservedEvent;
-import com.rahul.bookingservice.exception.BookingNotFoundException;
+import com.rahul.bookingservice.outbox.OutboxService;
 import com.rahul.bookingservice.repository.BookingRepository;
 import com.rahul.bookingservice.security.AuthUser;
 import lombok.RequiredArgsConstructor;
@@ -16,30 +23,36 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 // Only database work lives here. Every method is one short transaction.
+// Each status change saves its event to the outbox in the SAME transaction.
 @Service
 @RequiredArgsConstructor
 public class BookingService {
 
     private final BookingRepository bookingRepository;
+    private final OutboxService outboxService;
 
-    // A bare booking: we do not know the movie, seats or price yet. Cinema tells us later.
     @Transactional
-    public Booking createPendingBooking(Long showId, AuthUser user) {
+    public Booking createPendingBooking(Long showId, AuthUser user, List<Long> seatIds) {
         Booking booking = new Booking();
         booking.setUserId(user.getId());
         booking.setShowId(showId);
         booking.setCustomerEmail(user.getEmail());
         booking.setStatus(BookingStatus.PENDING);
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);   // IDENTITY: the id exists after this line
+
+        String eventId = UUID.randomUUID().toString();
+        outboxService.save(KafkaTopicConfig.BOOKING_CREATED_TOPIC, saved.getId(), eventId,
+                new BookingCreatedEvent(eventId, saved.getId(), user.getId(), showId, seatIds));
+        return saved;
     }
 
-    // Called when Cinema says the seats are reserved: copy the details into the booking.
+    // Cinema reserved the seats: copy the details into the booking. No event is needed.
     @Transactional
     public void addReservationDetails(SeatsReservedEvent event) {
-        Booking booking = bookingRepository.findByIdWithSeats(event.getBookingId())
-                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + event.getBookingId()));
+        Booking booking = findWithSeats(event.getBookingId());
 
         booking.setMovieName(event.getMovieName());
         booking.setShowTime(event.getShowTime());
@@ -52,41 +65,35 @@ public class BookingService {
             seat.setPrice(detail.getPrice());
             booking.addSeat(seat);
         }
-        // No save() needed: the booking is managed, so dirty checking writes the changes at commit.
     }
 
+    // Payment succeeded.
     @Transactional
-    public Booking updateStatus(Long bookingId, BookingStatus status) {
-        Booking booking = bookingRepository.findByIdWithSeats(bookingId)
-                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + bookingId));
-        booking.setStatus(status);
-        return booking;
+    public void markConfirmed(Long bookingId) {
+        Booking booking = findWithSeats(bookingId);
+        booking.setStatus(BookingStatus.CONFIRMED);
+
+        String eventId = UUID.randomUUID().toString();
+        outboxService.save(KafkaTopicConfig.BOOKING_CONFIRMED_TOPIC, bookingId, eventId,
+                new BookingConfirmedEvent(eventId, bookingId, booking.getCustomerEmail()));
     }
 
-    // The owner or an admin may read a booking. Anyone else gets a 403.
-    @Transactional(readOnly = true)
-    public Booking getBookingForUser(Long id, AuthUser caller) {
-        Booking booking = bookingRepository.findByIdWithSeats(id)
-                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + id));
-
-        boolean isOwner = booking.getUserId().equals(caller.getId());
-        boolean isAdmin = "ADMIN".equals(caller.getRole());
-        if (!isOwner && !isAdmin) {
-            throw new AccessDeniedException("You can only access your own bookings");
-        }
-        return booking;
-    }
-
-    @Transactional(readOnly = true)
-    public List<Booking> getBookingsForUser(AuthUser caller) {
-        return bookingRepository.findAllByUserIdWithSeats(caller.getId());
-    }
-
-    // Seats were refused: keep what the customer tried to book, so the failed booking is readable.
+    // Payment was declined: tell Cinema (release seats) and Notification.
     @Transactional
-    public Booking markSeatsUnavailable(SeatsReservationFailedEvent event) {
-        Booking booking = bookingRepository.findByIdWithSeats(event.getBookingId())
-                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + event.getBookingId()));
+    public void markPaymentFailed(PaymentFailedEvent event) {
+        Booking booking = findWithSeats(event.getBookingId());
+        booking.setStatus(BookingStatus.PAYMENT_FAILED);
+
+        String eventId = UUID.randomUUID().toString();
+        outboxService.save(KafkaTopicConfig.BOOKING_FAILED_TOPIC, booking.getId(), eventId,
+                new BookingFailedEvent(eventId, booking.getId(), event.getShowId(), event.getSeatIds(),
+                        booking.getCustomerEmail(), event.getReason()));
+    }
+
+    // A seat was taken: keep what the customer tried to book. Nothing was reserved, so no seats to release.
+    @Transactional
+    public void markSeatsUnavailable(SeatsReservationFailedEvent event) {
+        Booking booking = findWithSeats(event.getBookingId());
 
         booking.setStatus(BookingStatus.SEATS_UNAVAILABLE);
         booking.setMovieName(event.getMovieName());
@@ -103,7 +110,49 @@ public class BookingService {
                 total = total.add(detail.getPrice());
             }
         }
-        booking.setTotalAmount(total);   // what the booking would have cost
+        booking.setTotalAmount(total);
+
+        String eventId = UUID.randomUUID().toString();
+        outboxService.save(KafkaTopicConfig.BOOKING_FAILED_TOPIC, booking.getId(), eventId,
+                new BookingFailedEvent(eventId, booking.getId(), booking.getShowId(), List.of(),
+                        booking.getCustomerEmail(), event.getReason()));
+    }
+
+    // The customer cancelled a confirmed booking.
+    @Transactional
+    public Booking markCancelled(Long bookingId) {
+        Booking booking = findWithSeats(bookingId);
+        booking.setStatus(BookingStatus.CANCELLED);
+
+        List<Long> seatIds = booking.getSeats().stream().map(BookingSeat::getSeatId).toList();
+
+        String eventId = UUID.randomUUID().toString();
+        outboxService.save(KafkaTopicConfig.BOOKING_CANCELLED_TOPIC, bookingId, eventId,
+                new BookingCancelledEvent(eventId, bookingId, booking.getShowId(), seatIds,
+                        booking.getCustomerEmail()));
         return booking;
+    }
+
+    // The owner or an admin may read a booking. Anyone else gets a 403.
+    @Transactional(readOnly = true)
+    public Booking getBookingForUser(Long id, AuthUser caller) {
+        Booking booking = findWithSeats(id);
+
+        boolean isOwner = booking.getUserId().equals(caller.getId());
+        boolean isAdmin = "ADMIN".equals(caller.getRole());
+        if (!isOwner && !isAdmin) {
+            throw new AccessDeniedException("You can only access your own bookings");
+        }
+        return booking;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Booking> getBookingsForUser(AuthUser caller) {
+        return bookingRepository.findAllByUserIdWithSeats(caller.getId());
+    }
+
+    private Booking findWithSeats(Long bookingId) {
+        return bookingRepository.findByIdWithSeats(bookingId)
+                .orElseThrow(() -> new BookingNotFoundException("Booking not found with id: " + bookingId));
     }
 }
