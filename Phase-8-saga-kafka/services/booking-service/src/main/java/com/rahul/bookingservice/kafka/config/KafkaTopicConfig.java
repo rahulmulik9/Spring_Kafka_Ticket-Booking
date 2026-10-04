@@ -10,6 +10,8 @@ public class KafkaTopicConfig {
 
     public static final String BOOKING_CREATED_TOPIC = "booking-created";
     public static final String BOOKING_CONFIRMED_TOPIC = "booking-confirmed";
+    public static final String BOOKING_FAILED_TOPIC = "booking-failed";
+    public static final String BOOKING_CANCELLED_TOPIC = "booking-cancelled";
 
     @Bean
     public NewTopic bookingCreatedTopic() {
@@ -19,5 +21,15 @@ public class KafkaTopicConfig {
     @Bean
     public NewTopic bookingConfirmedTopic() {
         return TopicBuilder.name(BOOKING_CONFIRMED_TOPIC).partitions(3).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic bookingFailedTopic() {
+        return TopicBuilder.name(BOOKING_FAILED_TOPIC).partitions(3).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic bookingCancelledTopic() {
+        return TopicBuilder.name(BOOKING_CANCELLED_TOPIC).partitions(3).replicas(1).build();
     }
 }
