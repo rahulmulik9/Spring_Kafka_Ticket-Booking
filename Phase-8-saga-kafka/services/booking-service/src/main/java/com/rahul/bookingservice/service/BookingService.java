@@ -4,6 +4,9 @@ import com.rahul.bookingservice.entity.Booking;
 import com.rahul.bookingservice.entity.BookingSeat;
 import com.rahul.bookingservice.entity.BookingStatus;
 import com.rahul.bookingservice.exception.BookingNotFoundException;
+import com.rahul.bookingservice.idempotency.IdempotencyKey;
+import com.rahul.bookingservice.idempotency.IdempotencyKeyRepository;
+import com.rahul.bookingservice.idempotency.IdempotencyKeyReuseException;
 import com.rahul.bookingservice.kafka.config.KafkaTopicConfig;
 import com.rahul.bookingservice.kafka.event.BookingCancelledEvent;
 import com.rahul.bookingservice.kafka.event.BookingConfirmedEvent;
@@ -23,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 // Only database work lives here. Every method is one short transaction.
@@ -33,15 +37,26 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final OutboxService outboxService;
+    private final IdempotencyKeyRepository idempotencyKeyRepository;
 
+    // The booking, the idempotency key and the BookingCreated event are saved in ONE transaction.
+    // A duplicate key fails on the unique constraint, and everything rolls back.
     @Transactional
-    public Booking createPendingBooking(Long showId, AuthUser user, List<Long> seatIds) {
+    public Booking createPendingBooking(Long showId, AuthUser user, List<Long> seatIds,
+                                        String idempotencyKey, String requestHash) {
         Booking booking = new Booking();
         booking.setUserId(user.getId());
         booking.setShowId(showId);
         booking.setCustomerEmail(user.getEmail());
         booking.setStatus(BookingStatus.PENDING);
-        Booking saved = bookingRepository.save(booking);   // IDENTITY: the id exists after this line
+        Booking saved = bookingRepository.save(booking);
+
+        IdempotencyKey keyRow = new IdempotencyKey();
+        keyRow.setUserId(user.getId());
+        keyRow.setIdempotencyKey(idempotencyKey);
+        keyRow.setRequestHash(requestHash);
+        keyRow.setBookingId(saved.getId());
+        idempotencyKeyRepository.save(keyRow);   // a repeated key throws DataIntegrityViolationException here
 
         String eventId = UUID.randomUUID().toString();
         outboxService.save(KafkaTopicConfig.BOOKING_CREATED_TOPIC, saved.getId(), eventId,
@@ -49,6 +64,19 @@ public class BookingService {
         return saved;
     }
 
+    // Has this user already sent this key? If yes and the request is the same, return that booking.
+    // If yes but the request is different, refuse.
+    @Transactional(readOnly = true)
+    public Optional<Booking> findReplay(Long userId, String idempotencyKey, String requestHash) {
+        return idempotencyKeyRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey)
+                .map(row -> {
+                    if (!row.getRequestHash().equals(requestHash)) {
+                        throw new IdempotencyKeyReuseException(
+                                "Idempotency-Key '" + idempotencyKey + "' was already used with a different request");
+                    }
+                    return findWithSeats(row.getBookingId());   // seats loaded here, because open-in-view is off
+                });
+    }
     // Cinema reserved the seats: copy the details into the booking. No event is needed.
     @Transactional
     public void addReservationDetails(SeatsReservedEvent event) {

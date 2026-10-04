@@ -24,12 +24,15 @@ public class BookingController {
     private final BookingService bookingService;
     private final BookingFacade bookingFacade;
 
+    // 202 Accepted: "we got your request and it is being processed". The status is PENDING for now.
+    // The client must send a unique Idempotency-Key (a UUID is ideal, and the limit is 100 characters).
     @PostMapping("/{showId}")
     public ResponseEntity<BookingResponse> createBooking(@PathVariable Long showId,
+                                                         @RequestHeader("Idempotency-Key") String idempotencyKey,
                                                          @Valid @RequestBody BookingRequest request,
                                                          @AuthenticationPrincipal AuthUser user) {
-        Booking booking = bookingFacade.createBooking(showId, request, user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(BookingMapper.toResponse(booking));
+        Booking booking = bookingFacade.createBooking(showId, request, user, idempotencyKey);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(BookingMapper.toResponse(booking));
     }
 
     @GetMapping("/{id}")
