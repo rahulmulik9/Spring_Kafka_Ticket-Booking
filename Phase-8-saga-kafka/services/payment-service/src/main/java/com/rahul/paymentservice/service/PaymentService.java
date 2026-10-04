@@ -6,6 +6,7 @@ import com.rahul.paymentservice.exception.PaymentAlreadyDoneException;
 import com.rahul.paymentservice.idempotency.IdempotencyKey;
 import com.rahul.paymentservice.idempotency.IdempotencyKeyRepository;
 import com.rahul.paymentservice.idempotency.IdempotencyKeyReuseException;
+import com.rahul.paymentservice.idempotency.ProcessedEventService;
 import com.rahul.paymentservice.kafka.config.KafkaTopicConfig;
 import com.rahul.paymentservice.kafka.event.PaymentCompletedEvent;
 import com.rahul.paymentservice.kafka.event.PaymentFailedEvent;
@@ -30,22 +31,30 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OutboxService outboxService;
     private final IdempotencyKeyRepository idempotencyKeyRepository;
+    private final ProcessedEventService processedEventService;
     private final BigDecimal maxAmount;
 
     public PaymentService(PaymentRepository paymentRepository,
                           OutboxService outboxService,
                           IdempotencyKeyRepository idempotencyKeyRepository,
+                          ProcessedEventService processedEventService,
                           @Value("${payment.max-amount}") BigDecimal maxAmount) {
         this.paymentRepository = paymentRepository;
         this.outboxService = outboxService;
         this.idempotencyKeyRepository = idempotencyKeyRepository;
+        this.processedEventService = processedEventService;
         this.maxAmount = maxAmount;
     }
 
-    // Called by the Kafka listener. The payment row and its event are saved in ONE transaction.
-    // pay() below is called from inside this method, so it simply joins this transaction.
+    // Called by the Kafka listener. The payment row, its event and the "already handled" record
+    // are saved in ONE transaction.
     @Transactional
     public void payForBooking(SeatsReservedEvent event) {
+        if (!processedEventService.markIfNew(event.getEventId())) {
+            log.info("Skipping duplicate event {} (seats-reserved)", event.getEventId());
+            return;   // charged already, so no second charge and no second event
+        }
+
         Payment payment = pay(event.getBookingId(), event.getUserId(), event.getTotalAmount());
         String eventId = UUID.randomUUID().toString();
 
