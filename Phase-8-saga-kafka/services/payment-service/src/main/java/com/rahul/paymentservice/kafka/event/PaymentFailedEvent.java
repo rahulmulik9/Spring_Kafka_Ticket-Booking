@@ -6,21 +6,18 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.math.BigDecimal;
 import java.util.List;
 
-// showId and seats are needed now: if the payment fails, we must tell everyone which seats to release.
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class SeatsReservedEvent {
+public class PaymentFailedEvent {
 
     private String eventId;
     private Long bookingId;
-    private Long userId;
     private Long showId;
-    private BigDecimal totalAmount;
-    private List<SeatDetail> seats;
+    private List<Long> seatIds;   // carried along, so Booking does not depend on its own copy being filled in yet
+    private String reason;
 }
