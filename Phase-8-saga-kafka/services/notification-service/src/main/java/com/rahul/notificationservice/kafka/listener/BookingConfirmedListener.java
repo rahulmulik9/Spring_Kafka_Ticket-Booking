@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class BookingConfirmedListener {
 
-    @KafkaListener(topics = "booking-confirmed")
+    @KafkaListener(topics = "booking-confirmed",
+            properties = "spring.json.value.default.type=com.rahul.notificationservice.kafka.event.BookingConfirmedEvent")
     public void onBookingConfirmed(@Payload BookingConfirmedEvent event) {
         log.info("Sending confirmation to {} for booking {}", event.getCustomerEmail(), event.getBookingId());
     }
