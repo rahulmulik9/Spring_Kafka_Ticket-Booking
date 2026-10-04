@@ -1,6 +1,7 @@
 package com.rahul.bookingservice.exception;
 
 import com.rahul.bookingservice.dto.ErrorResponse;
+import com.rahul.bookingservice.idempotency.IdempotencyKeyReuseException;
 import feign.RetryableException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -9,10 +10,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -117,5 +120,23 @@ public class GlobalExceptionHandler {
         ErrorResponse body = new ErrorResponse(status.value(), errorCode, message,
                 request.getRequestURI(), LocalDateTime.now());
         return ResponseEntity.status(status).body(body);
+    }
+
+    @ExceptionHandler(IdempotencyKeyReuseException.class)
+    public ResponseEntity<Map<String, Object>> handleIdempotencyKeyReuse(IdempotencyKeyReuseException ex) {
+        log.warn("Idempotency key reused with a different request: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of(
+                "status", 422,
+                "error", "IDEMPOTENCY_KEY_REUSED",
+                "message", ex.getMessage()));
+    }
+
+    // Header missing: this should be 400, not 500.
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingHeader(MissingRequestHeaderException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "status", 400,
+                "error", "MISSING_HEADER",
+                "message", "Required header '" + ex.getHeaderName() + "' is missing"));
     }
 }
