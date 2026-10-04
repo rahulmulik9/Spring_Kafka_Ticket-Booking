@@ -3,6 +3,9 @@ package com.rahul.paymentservice.service;
 import com.rahul.paymentservice.entity.Payment;
 import com.rahul.paymentservice.entity.PaymentStatus;
 import com.rahul.paymentservice.exception.PaymentAlreadyDoneException;
+import com.rahul.paymentservice.idempotency.IdempotencyKey;
+import com.rahul.paymentservice.idempotency.IdempotencyKeyRepository;
+import com.rahul.paymentservice.idempotency.IdempotencyKeyReuseException;
 import com.rahul.paymentservice.kafka.config.KafkaTopicConfig;
 import com.rahul.paymentservice.kafka.event.PaymentCompletedEvent;
 import com.rahul.paymentservice.kafka.event.PaymentFailedEvent;
@@ -17,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -25,13 +29,16 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final OutboxService outboxService;
+    private final IdempotencyKeyRepository idempotencyKeyRepository;
     private final BigDecimal maxAmount;
 
     public PaymentService(PaymentRepository paymentRepository,
                           OutboxService outboxService,
+                          IdempotencyKeyRepository idempotencyKeyRepository,
                           @Value("${payment.max-amount}") BigDecimal maxAmount) {
         this.paymentRepository = paymentRepository;
         this.outboxService = outboxService;
+        this.idempotencyKeyRepository = idempotencyKeyRepository;
         this.maxAmount = maxAmount;
     }
 
@@ -94,5 +101,32 @@ public class PaymentService {
         return payments.stream()
                 .filter(p -> p.getUserId().equals(callerId))
                 .toList();
+    }
+
+    // The payment and the idempotency key are saved in ONE transaction.
+    // A duplicate key fails on the unique constraint, and the payment rolls back with it.
+    @Transactional
+    public Payment payOnce(Long bookingId, Long userId, BigDecimal amount, String idempotencyKey, String requestHash) {
+        Payment payment = pay(bookingId, userId, amount);   // joins this transaction
+
+        IdempotencyKey keyRow = new IdempotencyKey();
+        keyRow.setUserId(userId);
+        keyRow.setIdempotencyKey(idempotencyKey);
+        keyRow.setRequestHash(requestHash);
+        keyRow.setPaymentId(payment.getId());
+        idempotencyKeyRepository.save(keyRow);
+        return payment;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Payment> findReplay(Long userId, String idempotencyKey, String requestHash) {
+        return idempotencyKeyRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey)
+                .map(row -> {
+                    if (!row.getRequestHash().equals(requestHash)) {
+                        throw new IdempotencyKeyReuseException(
+                                "Idempotency-Key '" + idempotencyKey + "' was already used with a different request");
+                    }
+                    return paymentRepository.findById(row.getPaymentId()).orElseThrow();
+                });
     }
 }
