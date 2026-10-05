@@ -1,0 +1,3 @@
+ALTER TABLE bookings DROP CONSTRAINT chk_bookings_status;
+ALTER TABLE bookings ADD CONSTRAINT chk_bookings_status
+    CHECK (status IN ('PENDING', 'CONFIRMED', 'CANCELLED', 'PAYMENT_FAILED', 'SEATS_UNAVAILABLE'));

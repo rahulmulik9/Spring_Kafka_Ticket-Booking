@@ -4,14 +4,14 @@
   <component name="MavenProjectsManager">
     <option name="originalFiles">
       <list>
-        <option value="$PROJECT_DIR$/Phase-7-microservices/services/config-server/pom.xml" />
-        <option value="$PROJECT_DIR$/Phase-7-microservices/services/eureka-server/pom.xml" />
-        <option value="$PROJECT_DIR$/Phase-7-microservices/services/user-service/pom.xml" />
-        <option value="$PROJECT_DIR$/Phase-7-microservices/services/cinema-service/pom.xml" />
-        <option value="$PROJECT_DIR$/Phase-7-microservices/services/booking-service/pom.xml" />
-        <option value="$PROJECT_DIR$/Phase-7-microservices/services/payment-service/pom.xml" />
-        <option value="$PROJECT_DIR$/Phase-7-microservices/services/notification-service/pom.xml" />
-        <option value="$PROJECT_DIR$/Phase-7-microservices/services/api-gateway/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-8-saga-kafka/services/api-gateway/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-8-saga-kafka/services/booking-service/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-8-saga-kafka/services/user-service/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-8-saga-kafka/services/payment-service/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-8-saga-kafka/services/notification-service/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-8-saga-kafka/services/eureka-server/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-8-saga-kafka/services/config-server/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-8-saga-kafka/services/cinema-service/pom.xml" />
       </list>
     </option>
   </component>

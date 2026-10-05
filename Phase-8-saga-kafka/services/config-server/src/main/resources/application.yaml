@@ -1,0 +1,14 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/rahulmulik9/ticket-booking-config-repo.git
+          #uri: file:///D:/Personal/Code/ticket-booking-config-repo   #for local
+          default-label: master
+          clone-on-start: true
