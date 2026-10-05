@@ -48,7 +48,7 @@ public class BookingFacade {
         }
 
         // 2. First time: create it. If two identical requests arrive together, both reach this line,
-        //    and the unique constraint lets exactly one of them commit.
+        //  and the unique constraint lets exactly one of them commit.
         try {
             return bookingService.createPendingBooking(showId, user, request.getSeatIds(), idempotencyKey, hash);
         } catch (DataIntegrityViolationException ex) {
